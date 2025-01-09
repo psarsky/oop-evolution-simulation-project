@@ -1,2 +1,5 @@
-# OOP-evolution-simulation-project
-This repository contains our evolution simulation project for OOP course at AGH UST.
+# Evolution Simulation Project
+Object oriented programming course at AGH UST - 2024/2025
+# Authors
+- [Jakub Psarski](https://github.com/psarsky)
+- [Jakub Kaliński](https://github.com/jakubkalinski0)
