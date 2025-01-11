@@ -15,15 +15,50 @@ public enum MapDirection {
     private static final Random random = new Random();
 
     public MapDirection next() {
+        return getMapDirection(
+                NORTHEAST,
+                EAST,
+                SOUTHEAST,
+                SOUTH,
+                SOUTHWEST,
+                WEST,
+                NORTHWEST,
+                NORTH
+        );
+    }
+
+    public MapDirection opposite() {
+        return getMapDirection(
+                SOUTH,
+                SOUTHWEST,
+                WEST,
+                NORTHWEST,
+                NORTH,
+                NORTHEAST,
+                EAST,
+                SOUTHEAST
+        );
+    }
+
+    private MapDirection getMapDirection(
+            MapDirection mapDirection,
+            MapDirection mapDirection2,
+            MapDirection mapDirection3,
+            MapDirection mapDirection4,
+            MapDirection mapDirection5,
+            MapDirection mapDirection6,
+            MapDirection mapDirection7,
+            MapDirection mapDirection8
+    ) {
         return switch(this) {
-            case NORTH      -> NORTHEAST;
-            case NORTHEAST  -> EAST;
-            case EAST       -> SOUTHEAST;
-            case SOUTHEAST  -> SOUTH;
-            case SOUTH      -> SOUTHWEST;
-            case SOUTHWEST  -> WEST;
-            case WEST       -> NORTHWEST;
-            case NORTHWEST  -> NORTH;
+            case NORTH      -> mapDirection;
+            case NORTHEAST  -> mapDirection2;
+            case EAST       -> mapDirection3;
+            case SOUTHEAST  -> mapDirection4;
+            case SOUTH      -> mapDirection5;
+            case SOUTHWEST  -> mapDirection6;
+            case WEST       -> mapDirection7;
+            case NORTHWEST  -> mapDirection8;
         };
     }
 
