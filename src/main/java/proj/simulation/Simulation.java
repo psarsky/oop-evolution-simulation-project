@@ -8,8 +8,11 @@ package proj.simulation;
 
 import proj.model.elements.Animal;
 import proj.model.elements.Plant;
+import proj.model.genotype.Genotype;
+import proj.model.genotype.Mutation;
+import proj.model.genotype.MutationVariant;
 import proj.model.maps.AbstractWorldMap;
-import proj.model.maps.MapVariant;
+import proj.model.maps. MapVariant;
 import proj.model.maps.WaterWorld;
 import proj.model.vegetation.AbstractVegetationVariant;
 import proj.util.RandomPositionGenerator;
@@ -27,20 +30,24 @@ public class Simulation implements Runnable {
     private final AbstractVegetationVariant vegetationVariant;
     private final SimulationProperties simulationProperties;
     private final List<Animal> deadAnimals;
+    private final MutationVariant mutationVariant;
+    private final Genotype genotype;
     private boolean running;
 
     // constructor
-    public Simulation(AbstractWorldMap map, AbstractVegetationVariant vegetationVariant, SimulationProperties simulationProperties) {
+    public Simulation(AbstractWorldMap map, AbstractVegetationVariant vegetationVariant, SimulationProperties simulationProperties, MutationVariant mutationVariant) {
         this.map = map;
         this.animals = new ArrayList<>();
         this.vegetationVariant = vegetationVariant;
         this.simulationProperties = simulationProperties;
         this.deadAnimals = new ArrayList<>();
+        this.mutationVariant = mutationVariant;
+        this.genotype = new Genotype(simulationProperties, mutationVariant);
         this.running = true;
 
         RandomPositionGenerator randomPositionGenerator = new RandomPositionGenerator(this.simulationProperties.getWidth(), this.simulationProperties.getHeight(), this.simulationProperties.getAnimalCount());
         for(Vector2d animalPosition : randomPositionGenerator) {
-            Animal animal = new Animal(animalPosition, this.simulationProperties);
+            Animal animal = new Animal(animalPosition, this.genotype, this.simulationProperties);
             this.animals.add(animal);
             this.map.placeAnimal(animal.getPos(), animal);
             this.map.notifyObservers("New animal placed at " + animal.getPos() + ".");
@@ -120,8 +127,8 @@ public class Simulation implements Runnable {
                 Animal parent1 = animalList.get(0);
                 Animal parent2 = animalList.get(1);
 
-                if (parent1.getEnergy() > this.simulationProperties.getEnergyToReproduce() &&
-                        parent2.getEnergy() > this.simulationProperties.getEnergyToReproduce()) {
+                if (parent1.getEnergy() > this.simulationProperties.getEnergyNeededToReproduce() &&
+                        parent2.getEnergy() > this.simulationProperties.getEnergyNeededToReproduce()) {
                     Animal child = parent1.reproduce(parent2, this.simulationProperties);
                     if (child != null) {
                         animalList.add(child);

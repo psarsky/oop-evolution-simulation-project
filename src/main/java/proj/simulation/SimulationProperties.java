@@ -11,7 +11,7 @@ import proj.model.movement.MovementVariant;
 import proj.model.vegetation.VegetationVariant;
 
 public class SimulationProperties {
-    private static int genesCount;
+    private static int genotypeSize;
     private final MovementVariant movementVariant;
     private final MutationVariant mutationVariant;
     private final MapVariant mapVariant;
@@ -24,17 +24,17 @@ public class SimulationProperties {
     private final int plantsPerDay;
     private final int startEnergy;
     private final int plantEnergy;
-    private final int energyToReproduce;
+    private final int energyNeededToReproduce;
     private final int energyToPassToChild;
-    private final int energyToMove;
+    private final int energyCostToMove;
     private final int simulationStep;
-    private final int minMutation;
-    private final int maxMutation;
+    private final int minimumNumberOfMutations;
+    private final int maximumNumberOfMutations;
 
     private int daysElapsed;
 
     // constructor
-    public SimulationProperties(int genesCount,
+    public SimulationProperties(int genotypeSize,
                                 MovementVariant movementVariant,
                                 MutationVariant mutationVariant,
                                 MapVariant mapVariant,
@@ -47,13 +47,13 @@ public class SimulationProperties {
                                 int plantsPerDay,
                                 int startEnergy,
                                 int plantEnergy,
-                                int energyToReproduce,
+                                int energyNeededToReproduce,
                                 int energyToPassToChild,
-                                int energyToMove,
+                                int energyCostToMove,
                                 int simulationStep,
-                                int minMutation,
-                                int maxMutation) {
-        SimulationProperties.genesCount = genesCount;
+                                int minimumNumberOfMutations,
+                                int maximumNumberOfMutations) {
+        SimulationProperties.genotypeSize = genotypeSize;
         this.movementVariant = movementVariant;
         this.mutationVariant = mutationVariant;
         this.mapVariant = mapVariant;
@@ -66,12 +66,12 @@ public class SimulationProperties {
         this.plantsPerDay = plantsPerDay;
         this.startEnergy = startEnergy;
         this.plantEnergy = plantEnergy;
-        this.energyToReproduce = energyToReproduce;
+        this.energyNeededToReproduce = energyNeededToReproduce;
         this.energyToPassToChild = energyToPassToChild;
-        this.energyToMove = energyToMove;
+        this.energyCostToMove = energyCostToMove;
         this.simulationStep = simulationStep;
-        this.minMutation = minMutation;
-        this.maxMutation = maxMutation;
+        this.minimumNumberOfMutations = minimumNumberOfMutations;
+        this.maximumNumberOfMutations = maximumNumberOfMutations;
         this.daysElapsed = 0;
     }
 
@@ -79,7 +79,7 @@ public class SimulationProperties {
     public void incrementDaysElapsed() {this.daysElapsed++;}
 
     // Getters
-    public static int getGenesCount() {return genesCount;}
+    public static int getGenotypeSize() {return genotypeSize;}
     public MovementVariant getMovementVariant() {return this.movementVariant;}
     public MutationVariant getMutationVariant() {return this.mutationVariant;}
     public MapVariant getMapVariant() {return this.mapVariant;}
@@ -92,11 +92,11 @@ public class SimulationProperties {
     public int getPlantsPerDay() {return this.plantsPerDay;}
     public int getStartEnergy() {return this.startEnergy;}
     public int getPlantEnergy() {return this.plantEnergy;}
-    public int getEnergyToReproduce() {return this.energyToReproduce;}
+    public int getEnergyNeededToReproduce() {return this.energyNeededToReproduce;}
     public int getEnergyToPassToChild() {return this.energyToPassToChild;}
-    public int getEnergyToMove() {return this.energyToMove;}
+    public int getEnergyCostToMove() {return this.energyCostToMove;}
     public int getSimulationStep() {return this.simulationStep;}
-    public int getMinMutation() {return this.minMutation;}
-    public int getMaxMutation() {return this.maxMutation;}
+    public int getMinimumNumberOfMutations() {return this.minimumNumberOfMutations;}
+    public int getMaximumNumberOfMutations() {return this.maximumNumberOfMutations;}
     public int getDaysElapsed() {return this.daysElapsed;}
 }

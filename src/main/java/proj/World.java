@@ -47,7 +47,7 @@ public class World {
         AbstractVegetationVariant vegetationVariant = new ForestedEquator(simulationProperties.getEquatorHeight(), simulationProperties.getWidth(), simulationProperties.getHeight());
         ConsoleMapDisplay observer = new ConsoleMapDisplay();
         map.addObserver(observer);
-        return new Simulation(map, vegetationVariant, simulationProperties);
+        return new Simulation(map, vegetationVariant, simulationProperties, );
     }
 
     /*
