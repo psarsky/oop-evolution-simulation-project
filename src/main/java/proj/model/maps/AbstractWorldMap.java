@@ -122,8 +122,7 @@ public abstract class AbstractWorldMap implements MoveValidator {
     // getters
     public HashMap<Vector2d, List<Animal>> getAnimals() {return this.animals;}
     public HashMap<Vector2d, Plant> getPlants() {return this.plants;}
-    public int getPlantsCount() {return this.plants.size();}
-    public List<Vector2d> getFreePositionsForPlants() {return this.freePlantPositions;}
+    public List<Vector2d> getFreePlantPositions() {return this.freePlantPositions;}
     public UUID getID() {return this.id;}
     public Boundary getCurrentBounds() {return new Boundary(new Vector2d(0, 0), new Vector2d(this.width - 1, this.height - 1));}
 }

@@ -26,7 +26,7 @@ public class WaterWorld extends AbstractWorldMap {
     // simulation methods
     public void waterFlow(boolean highTide){
         int waterCount = this.waterFields.size();
-        int waterToChangeCount = waterCount / 5;
+        int waterToChangeCount = highTide ? waterCount / 5 : waterCount / 8;
         
         if (waterToChangeCount == 0) waterToChangeCount = 1;
 
@@ -81,7 +81,8 @@ public class WaterWorld extends AbstractWorldMap {
     // returns a list of water fields that are adjacent to at least one non-water field
     private List<Vector2d> getSelectedWaterFields() {
         List<Vector2d> selectedWaterFields = new ArrayList<>(this.waterFields.keySet());
-        selectedWaterFields.forEach(waterField -> {
+        List<Vector2d> selectedWaterFieldsCopy = new ArrayList<>(this.waterFields.keySet());
+        selectedWaterFieldsCopy.forEach(waterField -> {
             boolean surrounded = this.waterFields.containsKey(waterField.add(new Vector2d(1, 0)))
                     && this.waterFields.containsKey(waterField.add(new Vector2d(-1, 0)))
                     && this.waterFields.containsKey(waterField.add(new Vector2d(0, 1)))
@@ -95,6 +96,16 @@ public class WaterWorld extends AbstractWorldMap {
 
 
     // utilities
+    public void generateFreePlantPositions(){
+        this.freePlantPositions.clear();
+        for (int x = 0; x < this.width; x++) {
+            for (int y = 0; y < this.height; y++) {
+                Vector2d position = new Vector2d(x, y);
+                if(!this.waterFields.containsKey(position)) this.freePlantPositions.add(position);
+            }
+        }
+    }
+
     @Override
     public PositionDirectionTuple correctPosition(Vector2d oldPosition, Vector2d newPosition, MapDirection direction){
         PositionDirectionTuple newTuple = super.correctPosition(oldPosition, newPosition, direction);

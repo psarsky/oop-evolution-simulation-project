@@ -31,7 +31,6 @@ public class SimulationProperties {
     private final int minMutation;
     private final int maxMutation;
 
-    private int maxEnergy;
     private int daysElapsed;
 
     // constructor
@@ -53,8 +52,7 @@ public class SimulationProperties {
                                 int energyToMove,
                                 int simulationStep,
                                 int minMutation,
-                                int maxMutation,
-                                int maxEnergy) {
+                                int maxMutation) {
         SimulationProperties.genesCount = genesCount;
         this.movementVariant = movementVariant;
         this.mutationVariant = mutationVariant;
@@ -74,7 +72,6 @@ public class SimulationProperties {
         this.simulationStep = simulationStep;
         this.minMutation = minMutation;
         this.maxMutation = maxMutation;
-        this.maxEnergy = maxEnergy;
         this.daysElapsed = 0;
     }
 
@@ -103,9 +100,5 @@ public class SimulationProperties {
     public int getSimulationStep() {return this.simulationStep;}
     public int getMinMutation() {return this.minMutation;}
     public int getMaxMutation() {return this.maxMutation;}
-    public int getMaxEnergy() {return this.maxEnergy;}
     public int getDaysElapsed() {return this.daysElapsed;}
-
-    // setters
-    public void setMaxEnergy(int maxEnergy) {this.maxEnergy = maxEnergy;}
 }

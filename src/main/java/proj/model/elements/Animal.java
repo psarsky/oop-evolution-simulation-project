@@ -6,6 +6,8 @@ add alt movement variant
 
 package proj.model.elements;
 
+
+import proj.model.genotype.Genotype;
 import proj.model.maps.MoveValidator;
 import proj.model.movement.MovementVariant;
 import proj.simulation.SimulationProperties;
@@ -13,7 +15,9 @@ import proj.util.MapDirection;
 import proj.util.PositionDirectionTuple;
 import proj.util.Vector2d;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class Animal implements WorldElement {
     private final MovementVariant movementVariant;
@@ -110,8 +114,11 @@ public class Animal implements WorldElement {
     public ElementType getElementType() {return ElementType.ANIMAL;}
     @Override
     public Vector2d getPos() {return this.positionDirection.position();}
+    public int getEnergy() {return this.energy;}
+    public int[] getGenotype() {return this.genotype;}
 
     // Setters
     public void setEnergy(int energy) {this.energy = energy;}
     public void setGenotype(int[] genotype) {this.genotype = genotype;}
+    public void setDeathDate(int date) {this.deathDate = date;}
 }
