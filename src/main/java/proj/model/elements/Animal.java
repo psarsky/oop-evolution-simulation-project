@@ -6,7 +6,6 @@ add alt movement variant
 
 package proj.model.elements;
 
-
 import proj.model.genotype.Genotype;
 import proj.model.maps.MoveValidator;
 import proj.model.movement.MovementVariant;
@@ -23,6 +22,7 @@ public class Animal implements WorldElement {
     private final MovementVariant movementVariant;
     private final int energyToReproduce;
     private final int energyToPassToChild;
+    private final int energyToMove;
     private final int birthDate;
     private PositionDirectionTuple positionDirection;
     private int energy;
@@ -38,6 +38,7 @@ public class Animal implements WorldElement {
         this.movementVariant = simulationProperties.getMovementVariant();
         this.energyToReproduce = simulationProperties.getEnergyToReproduce();
         this.energyToPassToChild = simulationProperties.getEnergyToPassToChild();
+        this.energyToMove = simulationProperties.getEnergyToMove();
         this.birthDate = simulationProperties.getDaysElapsed();
         this.positionDirection = new PositionDirectionTuple(position, MapDirection.getRandomDirection());
         this.energy = simulationProperties.getStartEnergy();
@@ -78,31 +79,18 @@ public class Animal implements WorldElement {
             Animal child = new Animal(this.positionDirection.position(), simulationProperties);
             child.setGenotype(childGenome);
             child.setEnergy(2 * energyForChild);
-            this.children.add(child);
-            mate.children.add(child);
-
-            this.childrenMade++;
-            mate.childrenMade++;
-
+            addChildToList(child);
+            mate.addChildToList(child);
             return child;
         }
         return null;
     }
 
-    // children
     public void addChildToList(Animal child) {
         this.children.add(child);
         this.childrenMade++;
     }
 
-    /*
-    // Display properties
-    @Override
-    public String toString() {
-        return String.format("Animal at %s facing %s, energy: %d, age: %d, children: %d, plants eaten: %d",
-                this.position, this.direction, this.energy, this.age, this.childrenMade, this.plantsEaten);
-    }
-    */
     @Override
     public String toString() {
         return this.positionDirection.direction().toString();
@@ -110,8 +98,6 @@ public class Animal implements WorldElement {
     }
 
     // Getters
-    @Override
-    public ElementType getElementType() {return ElementType.ANIMAL;}
     @Override
     public Vector2d getPos() {return this.positionDirection.position();}
     public int getEnergy() {return this.energy;}

@@ -11,7 +11,11 @@ import proj.util.MapDirection;
 import proj.util.PositionDirectionTuple;
 import proj.util.Vector2d;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
+
 
 public abstract class AbstractWorldMap implements MoveValidator {
     protected final List<MapChangeListener> observers;

@@ -5,6 +5,7 @@ add csv logging
 
 package proj.simulation;
 
+
 import proj.model.elements.Animal;
 import proj.model.elements.Plant;
 import proj.model.maps.AbstractWorldMap;
@@ -14,7 +15,10 @@ import proj.model.vegetation.AbstractVegetationVariant;
 import proj.util.RandomPositionGenerator;
 import proj.util.Vector2d;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Random;
 
 public class Simulation implements Runnable {
     private static final Random random = new Random();

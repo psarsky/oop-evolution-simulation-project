@@ -14,5 +14,8 @@ public class ForestedEquator extends AbstractVegetationVariant{
 
     // utilities
     @Override
-    public boolean preferred(Vector2d position) {return this.equatorLowerLeft.precedes(position) && this.equatorUpperRight.follows(position);}
+    public boolean preferred(Vector2d position) {
+        return this.equatorLowerLeft.precedes(position)
+                && this.equatorUpperRight.follows(position);
+    }
 }

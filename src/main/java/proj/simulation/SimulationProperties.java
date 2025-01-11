@@ -77,8 +77,6 @@ public class SimulationProperties {
 
     // Increment days elapsed
     public void incrementDaysElapsed() {this.daysElapsed++;}
-    // Reset days elapsed
-    public void resetDaysElapsed() {this.daysElapsed = 0;}
 
     // Getters
     public static int getGenesCount() {return genesCount;}

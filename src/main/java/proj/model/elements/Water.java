@@ -22,6 +22,4 @@ public class Water implements WorldElement {
     // getters
     @Override
     public Vector2d getPos() {return this.position;}
-    @Override
-    public ElementType getElementType() {return ElementType.WATER;}
 }

@@ -22,6 +22,4 @@ public class Plant implements WorldElement {
     // getters
     @Override
     public Vector2d getPos() {return this.position;}
-    @Override
-    public ElementType getElementType() {return ElementType.PLANT;}
 }
