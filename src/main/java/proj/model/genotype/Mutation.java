@@ -4,14 +4,17 @@ import proj.simulation.SimulationProperties;
 
 /**
  * Interface representing a mutation strategy that can be applied to an array of genes.
+ * Implementations of this interface define specific ways to modify the genes during mutation.
  */
 public interface Mutation {
     /**
      * Applies a mutation to the given array of genes.
-     * The mutation modifies some or all of the genes in the array.
+     * The mutation alters the genes in the array based on the rules defined by the mutation strategy
+     * and the properties of the simulation.
      *
-     * @param Genotype               the array of genes to mutate
-     * @param simulationProperties the properties of the simulation containing mutation configuration
+     * @param genes                         The array of genes to mutate
+     * @param simulationProperties          The simulation properties containing mutation configuration, such as
+     *                                mutation type, rate, or other relevant parameters
      */
-    void applyMutation(int[] Genotype, SimulationProperties simulationProperties);
+    void applyMutation(int[] genes, SimulationProperties simulationProperties);
 }

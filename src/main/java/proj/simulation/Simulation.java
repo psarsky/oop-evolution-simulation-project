@@ -9,7 +9,6 @@ package proj.simulation;
 import proj.model.elements.Animal;
 import proj.model.elements.Plant;
 import proj.model.genotype.Genotype;
-import proj.model.genotype.Mutation;
 import proj.model.genotype.MutationVariant;
 import proj.model.maps.AbstractWorldMap;
 import proj.model.maps. MapVariant;
@@ -30,19 +29,17 @@ public class Simulation implements Runnable {
     private final AbstractVegetationVariant vegetationVariant;
     private final SimulationProperties simulationProperties;
     private final List<Animal> deadAnimals;
-    private final MutationVariant mutationVariant;
     private final Genotype genotype;
     private boolean running;
 
     // constructor
-    public Simulation(AbstractWorldMap map, AbstractVegetationVariant vegetationVariant, SimulationProperties simulationProperties, MutationVariant mutationVariant) {
+    public Simulation(AbstractWorldMap map, AbstractVegetationVariant vegetationVariant, SimulationProperties simulationProperties) {
         this.map = map;
         this.animals = new ArrayList<>();
         this.vegetationVariant = vegetationVariant;
         this.simulationProperties = simulationProperties;
         this.deadAnimals = new ArrayList<>();
-        this.mutationVariant = mutationVariant;
-        this.genotype = new Genotype(simulationProperties, mutationVariant);
+        this.genotype = new Genotype(simulationProperties);
         this.running = true;
 
         RandomPositionGenerator randomPositionGenerator = new RandomPositionGenerator(this.simulationProperties.getWidth(), this.simulationProperties.getHeight(), this.simulationProperties.getAnimalCount());

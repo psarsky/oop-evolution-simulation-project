@@ -79,7 +79,7 @@ public class SimulationProperties {
     public void incrementDaysElapsed() {this.daysElapsed++;}
 
     // Getters
-    public static int getGenotypeSize() {return genotypeSize;}
+    public int getGenotypeSize() {return genotypeSize;}
     public MovementVariant getMovementVariant() {return this.movementVariant;}
     public MutationVariant getMutationVariant() {return this.mutationVariant;}
     public MapVariant getMapVariant() {return this.mapVariant;}

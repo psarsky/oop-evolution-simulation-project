@@ -17,23 +17,25 @@ public class RandomMutation implements Mutation {
      * (within the range defined by the simulation properties) is modified. Each mutated
      * gene is replaced by a random value in the range [0, 7].
      *
-     * @param Genotype               the array of genes to mutate
-     * @param simulationProperties the properties of the simulation containing mutation configuration
+     * @param Genotype                      The array of genes to mutate
+     * @param simulationProperties          The properties of the simulation containing mutation configuration,
+     *                               including the minimum and maximum number of mutations allowed.
      */
     @Override
     public void applyMutation(int[] Genotype, SimulationProperties simulationProperties) {
-        if (Genotype.length == 0) return;
+        if (Genotype.length == 0) return; // If there are no genes, no mutation can be applied.
 
         int minMutations = simulationProperties.getMinimumNumberOfMutations();
         int maxMutations = simulationProperties.getMaximumNumberOfMutations();
 
-        // Determine the number of mutations (at least one mutation is enforced)
+        // Determine the number of mutations to apply, ensuring it is within the defined range.
         int numberOfMutations = minMutations + random.nextInt(maxMutations - minMutations + 1);
 
+        // Perform the mutations by randomly selecting indices and modifying their values.
         for (int i = 0; i < numberOfMutations; i++) {
-            // Select a random index in the array
+            // Select a random index in the gene array.
             int geneIndex = random.nextInt(Genotype.length);
-            // Replace the gene at the selected index with a new random value in [0, 7]
+            // Assign a new random value in the range [0, 7] to the selected gene.
             Genotype[geneIndex] = random.nextInt(8);
         }
     }
