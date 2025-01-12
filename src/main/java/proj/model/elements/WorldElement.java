@@ -15,4 +15,5 @@ public interface WorldElement {
      * @return          The position of the element as a Vector2d object
      */
     Vector2d getPos();
+    ElementType getElementType();
 }

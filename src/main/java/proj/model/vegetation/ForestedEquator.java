@@ -35,4 +35,6 @@ public class ForestedEquator extends AbstractVegetationVariant {
         return this.equatorLowerLeft.precedes(position)
                 && this.equatorUpperRight.follows(position);
     }
+    @Override
+    public String getFieldType(Vector2d position) {return preferred(position) ? "equator" : "non-equator";}
 }

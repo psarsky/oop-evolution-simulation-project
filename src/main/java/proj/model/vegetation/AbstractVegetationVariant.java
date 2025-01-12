@@ -42,4 +42,5 @@ public abstract class AbstractVegetationVariant {
      * @return              true if the position is preferred, false otherwise
      */
     abstract boolean preferred(Vector2d position);
+    abstract String getFieldType(Vector2d position);
 }

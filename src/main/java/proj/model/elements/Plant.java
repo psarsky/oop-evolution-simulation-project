@@ -42,7 +42,7 @@ public class Plant implements WorldElement {
      * @return          The position of the plant as a {@link Vector2d} object
      */
     @Override
-    public Vector2d getPos() {
-        return this.position;
-    }
+    public Vector2d getPos() {return this.position;}
+    @Override
+    public ElementType getElementType() {return ElementType.PLANT;}
 }

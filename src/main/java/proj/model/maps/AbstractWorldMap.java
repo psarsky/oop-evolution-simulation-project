@@ -158,7 +158,7 @@ public abstract class AbstractWorldMap implements MoveValidator {
      */
     @Override
     public PositionDirectionTuple correctPosition(Vector2d oldPosition, Vector2d newPosition, MapDirection direction) {
-        int newX = newPosition.x() % this.width;
+        int newX = (newPosition.x() + this.width) % this.width;
         int newY = newPosition.y();
         MapDirection newDirection = direction;
 

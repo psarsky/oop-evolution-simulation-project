@@ -17,7 +17,6 @@ import proj.util.Vector2d;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 /**
  * The Animal class represents a single animal in the simulation.
@@ -25,19 +24,20 @@ import java.util.Random;
  */
 public class Animal implements WorldElement {
     private final MovementVariant movementVariant; // Defines how the animal moves in the simulation.
+    private final MutationVariant mutationVariant; // Mutation strategy applied to the animal's genotype during reproduction.
+    private final List<Animal> children = new ArrayList<>(); // List of all offspring produced by this animal.
     private final int energyToReproduce; // Energy required for the animal to reproduce.
     private final int energyToPassToChild; // Energy passed to offspring during reproduction.
     private final int energyCostToMove; // Energy cost incurred by the animal during movement.
     private final int birthDate; // The day the animal was born.
     private PositionDirectionTuple positionDirection; // Represents the animal's current position and direction on the map.
+    private int geneIndex; // Index of last used gene from the animal's genotype.
     private int energy; // Current energy level of the animal.
     private int age; // Current age of the animal in simulation days.
     private int deathDate; // Day the animal died (or -1 if still alive).
     private int plantsEaten; // Total number of plants consumed by the animal.
     private int childrenMade; // Total number of offspring produced by the animal.
-    private final MutationVariant mutationVariant; // Mutation strategy applied to the animal's genotype during reproduction.
     private int[] genotype; // Genetic sequence defining the animal's behavior and traits.
-    private final List<Animal> children = new ArrayList<>(); // List of all offspring produced by this animal.
 
     /**
      * Constructs a new Animal object with initial parameters.
@@ -52,7 +52,8 @@ public class Animal implements WorldElement {
         this.energyToPassToChild = simulationProperties.getEnergyToPassToChild();
         this.energyCostToMove = simulationProperties.getEnergyCostToMove();
         this.birthDate = simulationProperties.getDaysElapsed();
-        this.positionDirection = new PositionDirectionTuple(position, MapDirection.getRandomDirection());
+        this.positionDirection = new PositionDirectionTuple(position, MapDirection.NORTH);
+        this.geneIndex = -1;
         this.energy = simulationProperties.getStartEnergy();
         this.age = 0;
         this.deathDate = -1;
@@ -68,10 +69,10 @@ public class Animal implements WorldElement {
      * @param validator         Validator to ensure valid movement within the map boundaries.
      */
     public void move(MoveValidator validator) {
-        Random random = new Random();
-        int geneIndex = random.nextInt(this.genotype.length);
+        if(movementVariant == MovementVariant.PREDESTINED) {
+            this.geneIndex = (this.geneIndex + 1) % this.genotype.length;
+        }
         int rotationAngle = this.genotype[geneIndex];
-
         MapDirection newDirection = this.positionDirection.direction().rotate(rotationAngle);
         Vector2d newPosition = this.positionDirection.position().add(this.positionDirection.direction().toUnitVector());
 
@@ -166,6 +167,14 @@ public class Animal implements WorldElement {
     public int[] getGenotype() {
         return this.genotype;
     }
+    public ElementType getElementType() {return ElementType.ANIMAL;}
+    public int getBirthDate() {return this.birthDate;}
+    public int getDeathDate() {return this.deathDate;}
+    public int getChildrenMade() {return this.childrenMade;}
+    public int getPlantsEaten() {return this.plantsEaten;}
+    public int getAge() {return this.age;}
+    public MovementVariant getMovementVariant() {return this.movementVariant;}
+    public MapDirection getDir() {return this.positionDirection.direction();}
 
     // Setters
 
