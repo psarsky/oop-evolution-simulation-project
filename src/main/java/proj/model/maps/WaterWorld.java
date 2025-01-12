@@ -44,12 +44,14 @@ public class WaterWorld extends AbstractWorldMap {
      */
     public void waterFlow(boolean highTide) {
         int waterCount = this.waterFields.size();
-        int waterToChangeCount = highTide ? waterCount / 5 : waterCount / 8;
+        int waterToChangeCount = highTide ? waterCount / 5 : waterCount / 7;
 
-        if (waterToChangeCount == 0) waterToChangeCount = 1;
+        waterToChangeCount = Math.max(waterToChangeCount, 1);
 
         List<Vector2d> selectedWaterFields = getSelectedWaterFields();
         Collections.shuffle(selectedWaterFields);
+
+        waterToChangeCount = Math.min(selectedWaterFields.size(), waterToChangeCount);
 
         for (int i = 0; i < waterToChangeCount; i++) {
             Vector2d currentPosition = selectedWaterFields.get(i);
@@ -66,12 +68,8 @@ public class WaterWorld extends AbstractWorldMap {
                 }
 
                 // Replace plants or add new water if valid
-                if (plants.containsKey(newPosition)) {
-                    plants.remove(newPosition);
-                }
-                if (!this.waterFields.containsKey(newPosition)) {
-                    this.waterFields.put(newPosition, new Water(newPosition));
-                }
+                this.plants.remove(newPosition);
+                this.waterFields.put(newPosition, new Water(newPosition));
 
                 // Remove water if it expands out of bounds
                 if (newPosition.x() < 0 || newPosition.x() > width - 1 ||

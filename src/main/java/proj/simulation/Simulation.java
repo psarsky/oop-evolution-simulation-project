@@ -147,14 +147,14 @@ public class Simulation implements Runnable {
 
     // utilities
     public void spawnPlant() {
-        do {
+        while (!this.map.getFreePlantPositions().isEmpty()) {
             Vector2d plantPosition = this.map.getFreePlantPositions().get(random.nextInt(this.map.getFreePlantPositions().size()));
             if (this.vegetationVariant.validatePlantPosition(plantPosition)) {
                 Plant plant = new Plant(plantPosition);
                 this.map.placePlant(plantPosition, plant);
                 break;
             }
-        } while (!this.map.getFreePlantPositions().isEmpty());
+        }
     }
 
     public void togglePause() {this.running = !this.running;}
