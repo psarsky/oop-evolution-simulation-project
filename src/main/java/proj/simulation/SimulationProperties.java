@@ -35,7 +35,7 @@ public class SimulationProperties {
     private final int simulationStep; // Simulation step interval in milliseconds
     private final int minimumNumberOfMutations; // Minimum number of mutations for a child genotype
     private final int maximumNumberOfMutations; // Maximum number of mutations for a child genotype
-
+    private final int waterViolence; // Percentage value determining the aggression of water flow
     private int daysElapsed; // Counter for the number of days passed in the simulation
 
     /**
@@ -79,7 +79,8 @@ public class SimulationProperties {
                                 int energyCostToMove,
                                 int simulationStep,
                                 int minimumNumberOfMutations,
-                                int maximumNumberOfMutations) {
+                                int maximumNumberOfMutations,
+                                int waterViolence) {
         SimulationProperties.genotypeSize = genotypeSize;
         this.movementVariant = movementVariant;
         this.mutationVariant = mutationVariant;
@@ -99,6 +100,7 @@ public class SimulationProperties {
         this.simulationStep = simulationStep;
         this.minimumNumberOfMutations = minimumNumberOfMutations;
         this.maximumNumberOfMutations = maximumNumberOfMutations;
+        this.waterViolence = waterViolence;
         this.daysElapsed = 0;
     }
 
@@ -129,5 +131,6 @@ public class SimulationProperties {
     public int getSimulationStep() {return this.simulationStep;} // Return the simulation step interval
     public int getMinimumNumberOfMutations() {return this.minimumNumberOfMutations;} // Return the minimum number of mutations for offspring
     public int getMaximumNumberOfMutations() {return this.maximumNumberOfMutations;} // Return the maximum number of mutations for offspring
+    public int getWaterViolence() {return this.waterViolence;} // Return the water violence value
     public int getDaysElapsed() {return this.daysElapsed;} // Return the number of days elapsed in the simulation
 }

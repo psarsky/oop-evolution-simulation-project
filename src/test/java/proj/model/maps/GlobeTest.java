@@ -20,7 +20,7 @@ class GlobeTest {
 
     @Test
     public void correctPosition() {
-        Globe map = new Globe(new SimulationProperties(6, MovementVariant.PREDESTINED, MutationVariant.RANDOM, MapVariant.GLOBE, VegetationVariant.FORESTED_EQUATOR, 5, 5, 2, 0, 0, 0, 100, 1, 40, 20, 0, 1, 0, 0));
+        Globe map = new Globe(new SimulationProperties(6, MovementVariant.PREDESTINED, MutationVariant.RANDOM, MapVariant.GLOBE, VegetationVariant.FORESTED_EQUATOR, 5, 5, 2, 0, 0, 0, 100, 1, 40, 20, 0, 1, 0, 0, 0));
         assertEquals(new PositionDirectionTuple(new Vector2d(0, 1), MapDirection.NORTH), map.correctPosition(new Vector2d(0, 0), new Vector2d(0, -1), MapDirection.SOUTH));
         assertEquals(new PositionDirectionTuple(new Vector2d(0, 3), MapDirection.SOUTH), map.correctPosition(new Vector2d(0, 4), new Vector2d(0, 5), MapDirection.NORTH));
         assertEquals(new PositionDirectionTuple(new Vector2d(1, 1), MapDirection.NORTHWEST), map.correctPosition(new Vector2d(0, 0), new Vector2d(1, -1), MapDirection.SOUTHWEST));
@@ -40,7 +40,7 @@ class GlobeTest {
 
     @Test
     public void eatPlants() {
-        SimulationProperties simulationProperties = new SimulationProperties(6, MovementVariant.PREDESTINED, MutationVariant.RANDOM, MapVariant.GLOBE, VegetationVariant.FORESTED_EQUATOR, 5, 5, 1, 0, 0, 0, 10, 1, 40, 20, 0, 1, 0, 0);
+        SimulationProperties simulationProperties = new SimulationProperties(6, MovementVariant.PREDESTINED, MutationVariant.RANDOM, MapVariant.GLOBE, VegetationVariant.FORESTED_EQUATOR, 5, 5, 1, 0, 0, 0, 10, 1, 40, 20, 0, 1, 0, 0, 0);
         Globe map = new Globe(simulationProperties);
         ForestedEquator forestedEquator = new ForestedEquator(simulationProperties.getEquatorHeight(), simulationProperties.getWidth(), simulationProperties.getHeight());
         Simulation simulation = new Simulation(map, forestedEquator, simulationProperties);
@@ -52,7 +52,7 @@ class GlobeTest {
 
     @Test
     public void twoAnimalsEatPlants() {
-        SimulationProperties simulationProperties = new SimulationProperties(6, MovementVariant.PREDESTINED, MutationVariant.RANDOM, MapVariant.GLOBE, VegetationVariant.FORESTED_EQUATOR, 5, 5, 1, 0, 0, 0, 10, 1, 40, 20, 0, 1, 0, 0);
+        SimulationProperties simulationProperties = new SimulationProperties(6, MovementVariant.PREDESTINED, MutationVariant.RANDOM, MapVariant.GLOBE, VegetationVariant.FORESTED_EQUATOR, 5, 5, 1, 0, 0, 0, 10, 1, 40, 20, 0, 1, 0, 0, 0);
         Globe map = new Globe(simulationProperties);
         ForestedEquator forestedEquator = new ForestedEquator(simulationProperties.getEquatorHeight(), simulationProperties.getWidth(), simulationProperties.getHeight());
         Simulation simulation = new Simulation(map, forestedEquator, simulationProperties);
@@ -66,7 +66,7 @@ class GlobeTest {
 
     @Test
     public void reproduce() {
-        SimulationProperties simulationProperties = new SimulationProperties(6, MovementVariant.PREDESTINED, MutationVariant.RANDOM, MapVariant.GLOBE, VegetationVariant.FORESTED_EQUATOR, 5, 5, 1, 0, 0, 0, 100, 1, 40, 20, 0, 1, 0, 0);
+        SimulationProperties simulationProperties = new SimulationProperties(6, MovementVariant.PREDESTINED, MutationVariant.RANDOM, MapVariant.GLOBE, VegetationVariant.FORESTED_EQUATOR, 5, 5, 1, 0, 0, 0, 100, 1, 40, 20, 0, 1, 0, 0, 0);
         Globe map = new Globe(simulationProperties);
         ForestedEquator forestedEquator = new ForestedEquator(simulationProperties.getEquatorHeight(), simulationProperties.getWidth(), simulationProperties.getHeight());
         Simulation simulation = new Simulation(map, forestedEquator, simulationProperties);

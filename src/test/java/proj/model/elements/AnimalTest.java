@@ -15,7 +15,7 @@ class AnimalTest {
 
     @Test
     public void animalConstructor() {
-        SimulationProperties simulationProperties = new SimulationProperties(6, MovementVariant.PREDESTINED, MutationVariant.RANDOM, MapVariant.WATER_WORLD, VegetationVariant.FORESTED_EQUATOR, 5, 5, 1, 0, 0, 0, 10, 5, 40, 20, 0, 1, 0, 0);
+        SimulationProperties simulationProperties = new SimulationProperties(6, MovementVariant.PREDESTINED, MutationVariant.RANDOM, MapVariant.WATER_WORLD, VegetationVariant.FORESTED_EQUATOR, 5, 5, 1, 0, 0, 0, 10, 5, 40, 20, 0, 1, 0, 0, 0);
 
         Animal animal = new Animal(new Vector2d(1, 1), new Genotype(simulationProperties), simulationProperties);
         assertEquals(animal.getAge(), 0);
@@ -30,7 +30,7 @@ class AnimalTest {
 
     @Test
     public void eatingPlants() {
-        SimulationProperties simulationProperties = new SimulationProperties(6, MovementVariant.PREDESTINED, MutationVariant.RANDOM, MapVariant.WATER_WORLD, VegetationVariant.FORESTED_EQUATOR, 5, 5, 1, 0, 0, 0, 10, 5, 40, 20, 0, 1, 0, 0);
+        SimulationProperties simulationProperties = new SimulationProperties(6, MovementVariant.PREDESTINED, MutationVariant.RANDOM, MapVariant.WATER_WORLD, VegetationVariant.FORESTED_EQUATOR, 5, 5, 1, 0, 0, 0, 10, 5, 40, 20, 0, 1, 0, 0, 0);
         Animal animal = new Animal(new Vector2d(1, 1),new Genotype(simulationProperties),  simulationProperties);
         System.out.println(animal.getEnergy());
         animal.eatPlant(5);

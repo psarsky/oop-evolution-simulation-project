@@ -35,7 +35,8 @@ public class World {
                 1,      // energy consumed to move
                 100,    // simulation step
                 0,      // min mutation
-                0       // max mutation
+                0,      // max mutation
+                0     // water violence
         );
         Simulation simulation = getSimulation(simulationProperties);
         simulation.run();

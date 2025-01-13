@@ -137,6 +137,7 @@ public class Animal implements WorldElement {
     @Override
     public String toString() {
         return this.positionDirection.direction().toString();
+        // return " "; // for testing purposes, less visual clutter
     }
 
     // Getters
@@ -175,7 +176,6 @@ public class Animal implements WorldElement {
     public int getPlantsEaten() {return this.plantsEaten;}
     public int getAge() {return this.age;}
     public MovementVariant getMovementVariant() {return this.movementVariant;}
-    public MapDirection getDir() {return this.positionDirection.direction();}
 
     // Setters
 

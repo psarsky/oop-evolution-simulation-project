@@ -66,7 +66,7 @@ public class Simulation implements Runnable {
                 // update water
                 if (this.simulationProperties.getMapVariant() == MapVariant.WATER_WORLD) {
                     boolean highTide = this.simulationProperties.getDaysElapsed() % 10 < 5;
-                    ((WaterWorld) this.map).waterFlow(highTide);
+                    ((WaterWorld) this.map).waterFlow(highTide, this.simulationProperties.getWaterViolence());
                     ((WaterWorld) this.map).generateFreePlantPositions();
                 }
 

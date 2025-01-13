@@ -42,9 +42,9 @@ public class WaterWorld extends AbstractWorldMap {
      *
      * @param highTide      Whether the simulation is currently in high tide
      */
-    public void waterFlow(boolean highTide) {
+    public void waterFlow(boolean highTide, int waterViolence) {
         int waterCount = this.waterFields.size();
-        int waterToChangeCount = highTide ? waterCount / 5 : waterCount / 7;
+        int waterToChangeCount = highTide ? waterCount / 5 : waterCount / (5 * (100 + waterViolence) / 100);
 
         waterToChangeCount = Math.max(waterToChangeCount, 1);
 
