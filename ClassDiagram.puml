@@ -3,21 +3,34 @@
 
 'elements
 
-enum ElementType {
++enum ElementType {
+    ..Values..
     + ANIMAL
     + PLANT
     + WATER
 }
 
-interface WorldElement {
-    + Vector2d getPos()
-    + ElementType getElementType()
++interface WorldElement {
+    + {abstract} Vector2d getPos()
+    + {abstract} ElementType getElementType()
 }
 
-class Animal {
+abstract class InanimateElement {
+    ..Attributes..
+    - Vector2d position
+    ..Constructor..
+    + InanimateElement(Vector2d position)
+    ..Getters..
+    + Vector2d getPos() <<override>>
+}
+
+InanimateElement ..> WorldElement : <<implements>>
+
++class Animal {
+    ..Attributes..
     - MovementVariant movementVariant
     - MutationVariant mutationVariant
-    - List<Animal> children = new ArrayList<>()
+    - List<Animal> children
     - int energyToReproduce
     - int energyToPassToChild
     - int energyCostToMove
@@ -30,48 +43,109 @@ class Animal {
     - int plantsEaten
     - int childrenMade
     - int[] genotype
+    ..Constructor..
     + Animal(Vector2d position, Genotype genotype, SimulationProperties simulationProperties)
+    ..Simulation methods..
     + void move(MoveValidator validator)
     + void eatPlant(int plantEnergy)
     + Animal reproduce(Animal mate, SimulationProperties simulationProperties)
     + void addChildToList(Animal child)
-    + String toString()
+    ..Utilities..
+    + String toString() <<override>>
+    ..Getters..
+    + Vector2d getPos() <<override>>
+    + getEnergy()
+    + int[] getGenotype()
+    + ElementType getElementType() <<override>>
+    + int getBirthDate()
+    + int getDeathDate()
+    + int getChildrenMade()
+    + int getPlantsEaten()
+    + int getAge()
+    + MovementVariant getMovementVariant()
+    ..Setters..
+    + void setEnergy(int energy)
+    + void setGenotype(int[] genotype)
+    + void setDeathDate(int date)
+    
 }
 
-class Plant {
-    - Vector2d position
+Animal ..> WorldElement : <<implements>>
+
++class Plant {
+    ..Constructor..
     + Plant(Vector2d position)
-    + String toString()
-    + Vector2d getPos()
-    + ElementType getElementType()
+    ..Utilities..
+    + String toString() <<override>>
+    ..Getters..
+    + ElementType getElementType() <<override>>
 }
 
-class Water {
-    - Vector2d position
+Plant --> InanimateElement : <<extends>>
+
++class Water {
+    ..Constructor..
     + Water(Vector2d position)
-    + String toString()
-    + Vector2d getPos()
-    + ElementType getElementType()
+    ..Utilities..
+    + String toString() <<override>>
+    ..Getters..
+    + ElementType getElementType() <<override>>
 }
+
+Water --> InanimateElement : <<extends>>
 
 
 'genotype
 
-enum MutationVariant {
++enum MutationVariant {
+    ..Values..
     + RANDOM
 }
 
-interface Mutation {
-    void applyMutation(int[] genes, SimulationProperties simulationProperties);
++interface Mutation {
+    + {abstract} void applyMutation(int[] genes, SimulationProperties simulationProperties);
 }
 
-'movement
++class RandomMutation {
+    ..Methods..
+    + void applyMutation(int[] Genotype, SimulationProperties simulationProperties) <<override>>
+}
 
-interface MoveValidator {
-    + PositionDirectionTuple correctPosition(Vector2d oldPosition, Vector2d newPosition, MapDirection direction)
+RandomMutation ..> Mutation : <<implements>>
+
++class Genotype {
+    ..Attributes..
+    - int[] genes
+    - SimulationProperties simulationProperties
+    ..Constructors..
+    + Genotype(SimulationProperties simulationProperties)
+    + Genotype(Animal parent1, Animal parent2, SimulationProperties simulationProperties)
+    ..Simulation methods..
+    + void initializeRandomGenes()
+    + void generateChildGenes(Animal parent1, Animal parent2)
+    + void performMutation(int[] genes, SimulationProperties simulationProperties)
+    ..Utilities..
+    + String toString() <<override>>
+    + int hashCode() <<override>>
+    ..Getters..
+    + int[] getGenes()
+}
+
+
+'maps
+
++enum MapVariant {
+    ..Values..
+    + GLOBE
+    + WATER_WORLD
+}
+
++interface MoveValidator {
+    + {abstract} PositionDirectionTuple correctPosition(Vector2d oldPosition, Vector2d newPosition, MapDirection direction)
 }
 
 abstract class AbstractWorldMap {
+    ..Attributes..
     # List<MapChangeListener> observers
     # MapVisualizer mapVisualizer
     # UUID id
@@ -80,32 +154,113 @@ abstract class AbstractWorldMap {
     # List<Vector2d> freePlantPositions
     # int width
     # int height
+    ..Constructor..
     + AbstractWorldMap(SimulationProperties simulationProperties)
+    ..Simulation methods..
     + void placeAnimal(Vector2d position, Animal animal)
     + void removeAnimal(Animal animal)
     + void placePlant(Vector2d position, Plant plant)
     + void move(Animal animal)
+    ..Utilities..
     + WorldElement objectAt(Vector2d position)
     + void addObserver(MapChangeListener observer)
     + void notifyObservers(String message)
-    + PositionDirectionTuple correctPosition(Vector2d oldPosition, Vector2d newPosition, MapDirection direction)
-    + String toString()
+    + PositionDirectionTuple correctPosition(Vector2d oldPosition, Vector2d newPosition, MapDirection direction) <<override>>
+    + String toString() <<override>>
+    ..Getters..
+    + HashMap<Vector2d, List<Animal>> getAnimals()
+    + HashMap<Vector2d, Plant> getPlants()
+    + List<Vector2d> getFreePlantPositions()
+    + UUID getID()
+    + Boundary getCurrentBounds()
 }
 
-class Globe {
+AbstractWorldMap ..> MoveValidator : <<implements>>
+
++class Globe {
+    ..Constructor..
     + Globe(SimulationProperties simulationProperties)
 }
 
+Globe --> AbstractWorldMap : <<extends>>
+
 class WaterWorld {
+    ..Attributes..
     - HashMap<Vector2d, Water> waterFields
+    ..Constructor..
     + WaterWorld(SimulationProperties simulationProperties)
+    ..Simulation methods..
     + void waterFlow(boolean highTide, int waterViolence)
     + List<Vector2d> getSelectedWaterFields()
     + void generateFreePlantPositions()
-    + PositionDirectionTuple correctPosition(Vector2d oldPosition, Vector2d newPosition, MapDirection direction)
-    + WorldElement objectAt(Vector2d position)
+    ..Utilities..
+    + PositionDirectionTuple correctPosition(Vector2d oldPosition, Vector2d newPosition, MapDirection direction) <<override>>
+    + WorldElement objectAt(Vector2d position) <<override>>
 }
 
+WaterWorld --> AbstractWorldMap : <<extends>>
+
+
+'movement
+
++enum MovementVariant {
+    ..Values..
+    + PREDESTINED
+    + OLD_AGE_AINT_NO_PICNIC
+}
+
+
+'vegetation
+
++enum VegetationVariant {
+    ..Values..
+    + FORESTED_EQUATOR
+}
+
++interface Vegetation {
+    + {abstract} boolean validatePlantPosition(Vector2d position)
+    + {abstract} boolean preferred(Vector2d position)
+    + {abstract} String getFieldType(Vector2d position)
+}
+
+abstract class AbstractVegetationVariant {
+    ..Methods..
+    + boolean validatePlantPosition(Vector2d position) <<override>>
+}
+
+AbstractVegetationVariant ..> Vegetation : <<implements>>
+
++class ForestedEquator {
+    ..Attributes..
+    - Vector2d equatorLowerLeft
+    - Vector2d equatorUpperRight
+    ..Constructor..
+    + ForestedEquator(int equatorHeight, int mapWidth, int mapHeight)
+    ..Methods..
+    + boolean preferred(Vector2d position) <<override>>
+    + String getFieldType(Vector2d position) <<override>>
+}
+
+ForestedEquator --> AbstractVegetationVariant : <<extends>>
+
+
+'presenter
+
++interface MapChangeListener{
+    + {abstract} void mapChanged(AbstractWorldMap worldMap, String message)
+}
+
++class ConsoleMapDisplay {
+    ..Attributes..
+    - int count
+    ..Methods..
+    + void mapChanged(AbstractWorldMap worldMap, String message) <<override>>
+}
+
+ConsoleMapDisplay ..> MapChangeListener : <<implements>>
+
+
+'simulation
 
 class SimulationParameters {
     - int genotypeSize
@@ -132,12 +287,15 @@ class SimulationParameters {
 }
 
 
+'util
+
 class Boundary {
     + Vector2d lowerLeft
     + Vector2d upperRight
 }
 
 enum MapDirection {
+    ..Values..
     + NORTH
     + NORTHEAST
     + EAST
@@ -146,7 +304,7 @@ enum MapDirection {
     + SOUTHWEST
     + WEST
     + NORTHWEST
-
+    ..Methods..
     + MapDirection next()
     + MapDirection opposite()
     + Vector2d toUnitVector()
@@ -179,6 +337,8 @@ class RandomPositionIterator {
     + void remove()
 }
 
+RandomPositionGenerator --* RandomPositionIterator : <<contains>>
+
 class Vector2d <<record>> {
     - int x
     - int y
@@ -191,37 +351,6 @@ class Vector2d <<record>> {
     + Vector2d opposite()
     + String toString()
 }
-
-
-
-interface Runnable {}
-class Application {}
-
-
-
-Animal ..> WorldElement : <<implements>>
-Plant ..> WorldElement : <<implements>>
-Water ..> WorldElement : <<implements>>
-AbstractWorldMap ..> MoveValidator : <<implements>>
-Globe --> AbstractWorldMap : <<extends>>
-WaterWorld --> AbstractWorldMap : <<extends>>
-SimulationPresenter ..> MapChangeListener : <<implements>>
-Simulation ..> Runnable : <<implements>>
-SimulationApp --> Application : <<extends>>
-IncorrectPositionException --> Exception : <<extends>>
-
-RandomPositionGenerator --* RandomPositionIterator : <<contains>>
-
-/'
-SimulationApp --o SimulationPresenter : <<uses>>
-SimulationEngine --o Simulation : <<uses>>
-Boundary --o Vector2d : <<uses>>
-IncorrectPositionException --o Vector2d : <<uses>>
-MapDirection --o Vector2d : <<uses>>
-MapVisualizer --o WorldMap : <<uses>>
-MapVisualizer --o Vector2d : <<uses>>
-'/
-
 
 
 @enduml

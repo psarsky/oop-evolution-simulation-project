@@ -55,7 +55,7 @@ public class RandomPositionGenerator implements Iterable<Vector2d> {
      * @return          The first {@link Vector2d} position.
      */
     public Vector2d getHead() {
-        return this.positions.get(0);
+        return this.positions.getFirst();
     }
 
     /**
@@ -64,7 +64,7 @@ public class RandomPositionGenerator implements Iterable<Vector2d> {
      * @return          The last {@link Vector2d} position.
      */
     public Vector2d getTail() {
-        return this.positions.get(this.positions.size() - 1);
+        return this.positions.getLast();
     }
 
     /**

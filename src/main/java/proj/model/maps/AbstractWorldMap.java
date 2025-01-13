@@ -120,7 +120,7 @@ public abstract class AbstractWorldMap implements MoveValidator {
     public WorldElement objectAt(Vector2d position) {
         if (this.animals.containsKey(position)) {
             if (!this.animals.get(position).isEmpty())
-                return this.animals.get(position).get(0);
+                return this.animals.get(position).getFirst();
         }
         if (this.plants.containsKey(position)) return this.plants.get(position);
         return null;

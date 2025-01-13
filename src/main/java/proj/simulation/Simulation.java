@@ -9,7 +9,6 @@ package proj.simulation;
 import proj.model.elements.Animal;
 import proj.model.elements.Plant;
 import proj.model.genotype.Genotype;
-import proj.model.genotype.MutationVariant;
 import proj.model.maps.AbstractWorldMap;
 import proj.model.maps. MapVariant;
 import proj.model.maps.WaterWorld;

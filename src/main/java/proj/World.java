@@ -45,23 +45,11 @@ public class World {
 
     private static Simulation getSimulation(SimulationProperties simulationProperties) {
         AbstractWorldMap map = simulationProperties.getMapVariant() == MapVariant.WATER_WORLD ? new WaterWorld(simulationProperties) : new Globe(simulationProperties);
-        AbstractVegetationVariant vegetationVariant = new ForestedEquator(simulationProperties.getEquatorHeight(), simulationProperties.getWidth(), simulationProperties.getHeight());
+        AbstractVegetationVariant vegetationVariant = simulationProperties.getVegetationVariant() == VegetationVariant.FORESTED_EQUATOR ?
+                new ForestedEquator(simulationProperties.getEquatorHeight(), simulationProperties.getWidth(), simulationProperties.getHeight()) :
+                new ForestedEquator(simulationProperties.getEquatorHeight(), simulationProperties.getWidth(), simulationProperties.getHeight()); // placeholder for more options
         ConsoleMapDisplay observer = new ConsoleMapDisplay();
         map.addObserver(observer);
         return new Simulation(map, vegetationVariant, simulationProperties);
     }
-
-    /*
-    static SimulationEngine getSimulationEngine(List<Vector2d> positions, List<MoveDirection> directions) {
-        List<Simulation> simulations = new ArrayList<>();
-        ConsoleMapDisplay observer = new ConsoleMapDisplay();
-        for (int i = 0; i < 1000; i++) {
-            AbstractWorldMap map = i % 2 == 0 ? new GrassField(10) : new RectangularMap(8, 8);
-            map.addObserver(observer);
-            Simulation simulation = new Simulation(positions, directions, map);
-            simulations.add(simulation);
-        }
-        return new SimulationEngine(simulations);
-    }
-    */
 }

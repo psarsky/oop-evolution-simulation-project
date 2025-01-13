@@ -26,17 +26,6 @@ public class Genotype {
     }
 
     /**
-     * Initializes the genotype with random gene values in the range [0, 7].
-     * Each value represents a possible movement direction.
-     */
-    public void initializeRandomGenes() {
-        Random random = new Random();
-        for (int i = 0; i < genes.length; i++) {
-            genes[i] = random.nextInt(8); // Random direction from 0 to 7
-        }
-    }
-
-    /**
      * Constructs a genotype with genes of parents with the specified size, using the provided simulation properties
      * and parents' genes.
      *
@@ -48,6 +37,17 @@ public class Genotype {
         this.simulationProperties = simulationProperties;
         this.genes = new int[simulationProperties.getGenotypeSize()];
         generateChildGenes(parent1, parent2);
+    }
+
+    /**
+     * Initializes the genotype with random gene values in the range [0, 7].
+     * Each value represents a possible movement direction.
+     */
+    public void initializeRandomGenes() {
+        Random random = new Random();
+        for (int i = 0; i < genes.length; i++) {
+            genes[i] = random.nextInt(8); // Random direction from 0 to 7
+        }
     }
 
     /**

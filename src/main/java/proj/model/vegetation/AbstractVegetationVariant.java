@@ -12,6 +12,7 @@ import java.util.Random;
 public abstract class AbstractVegetationVariant implements Vegetation {
     private final Random random = new Random(); // Random generator for introducing variability in plant placement
 
+    @Override
     public boolean validatePlantPosition(Vector2d position) {
         // The position is valid if it is preferred, with a 4/5 probability of success,
         // or if it is not preferred, with a 1/5 probability.
