@@ -79,17 +79,4 @@ class GlobeTest {
         assertEquals(3, map.getAnimals().get(new Vector2d(0, 0)).size());
         assertEquals(40, map.getAnimals().get(new Vector2d(0, 0)).get(2).getEnergy());
     }
-
-    @Test
-    public void animalMovement(){
-        SimulationProperties simulationProperties = new SimulationProperties(6, MovementVariant.PREDESTINED, MutationVariant.RANDOM, MapVariant.GLOBE, VegetationVariant.FORESTED_EQUATOR, 5, 5, 1, 0, 0, 0, 10, 1, 40, 20, 0, 1, 0, 0);
-        Globe map = new Globe(simulationProperties);
-        Animal animal = new Animal(new Vector2d(0, 0), new Genotype(simulationProperties), simulationProperties);
-        int[] genotype = {0, 0, 0, 0, 0, 0};
-        animal.setGenotype(genotype);
-        map.placeAnimal(new Vector2d(0, 0), animal);
-        animal.move(map);
-        assertEquals(new Vector2d(0, 1), animal.getPos());
-        assertEquals(MapDirection.NORTH, animal.getDir());
-    }
 }

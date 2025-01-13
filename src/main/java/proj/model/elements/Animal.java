@@ -17,12 +17,14 @@ import proj.util.Vector2d;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * The Animal class represents a single animal in the simulation.
  * Animals move, consume energy, eat plants, and reproduce based on their genotype and simulation properties.
  */
 public class Animal implements WorldElement {
+    private final static Random random = new Random();
     private final MovementVariant movementVariant; // Defines how the animal moves in the simulation.
     private final MutationVariant mutationVariant; // Mutation strategy applied to the animal's genotype during reproduction.
     private final List<Animal> children = new ArrayList<>(); // List of all offspring produced by this animal.
@@ -52,8 +54,8 @@ public class Animal implements WorldElement {
         this.energyToPassToChild = simulationProperties.getEnergyToPassToChild();
         this.energyCostToMove = simulationProperties.getEnergyCostToMove();
         this.birthDate = simulationProperties.getDaysElapsed();
-        this.positionDirection = new PositionDirectionTuple(position, MapDirection.NORTH);
-        this.geneIndex = -1;
+        this.positionDirection = new PositionDirectionTuple(position, MapDirection.getRandomDirection());
+        this.geneIndex = random.nextInt(simulationProperties.getGenotypeSize());
         this.energy = simulationProperties.getStartEnergy();
         this.age = 0;
         this.deathDate = -1;
