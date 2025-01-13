@@ -37,6 +37,20 @@ public class Genotype {
     }
 
     /**
+     * Constructs a genotype with genes of parents with the specified size, using the provided simulation properties
+     * and parents' genes.
+     *
+     * @param parent1                       The first parent (Animal)
+     * @param parent2                       The second parent (Animal)
+     * @param simulationProperties          Specified properties of the current simulation
+     */
+    public Genotype(Animal parent1, Animal parent2, SimulationProperties simulationProperties) {
+        this.simulationProperties = simulationProperties;
+        this.genes = new int[simulationProperties.getGenotypeSize()];
+        generateChildGenes(parent1, parent2);
+    }
+
+    /**
      * Generates a child's genes based on the genotypes and energies of two parent animals.
      * The child's genes are a combination of sections from each parent's genotype, with
      * the size of each section determined by their respective energy levels.

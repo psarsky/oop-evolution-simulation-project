@@ -102,8 +102,7 @@ public class Animal implements WorldElement {
      */
     public Animal reproduce(Animal mate, SimulationProperties simulationProperties) {
         if (this.energy >= this.energyToReproduce && mate.energy >= mate.energyToReproduce) {
-            Genotype childGenotype = new Genotype(simulationProperties);
-            childGenotype.generateChildGenes(this, mate);
+            Genotype childGenotype = new Genotype(this, mate, simulationProperties);
 
             int energyForChild = Math.min(this.energyToPassToChild, Math.min(this.energy, mate.energy));
 
