@@ -7,7 +7,10 @@ import proj.model.maps.AbstractWorldMap;
 import proj.model.maps.Globe;
 import proj.model.maps.MapVariant;
 import proj.model.maps.WaterWorld;
+import proj.model.movement.AbstractMovementVariant;
 import proj.model.movement.MovementVariant;
+import proj.model.movement.OldAgeAintNoPicnic;
+import proj.model.movement.PredestinedMovement;
 import proj.model.vegetation.AbstractVegetationVariant;
 import proj.model.vegetation.ForestedEquator;
 import proj.model.vegetation.VegetationVariant;
@@ -20,7 +23,7 @@ public class World {
         System.out.println("START");
         SimulationProperties simulationProperties = new SimulationProperties(
                 100,    // gene count
-                MovementVariant.PREDESTINED,
+                MovementVariant.OLD_AGE_AINT_NO_PICNIC,
                 MutationVariant.RANDOM,
                 MapVariant.WATER_WORLD,
                 VegetationVariant.FORESTED_EQUATOR,
@@ -53,12 +56,16 @@ public class World {
                     simulationProperties.getHeight()
             );
         };
-        AbstractWorldMap map = switch(simulationProperties.getMapVariant()) {
-            case GLOBE -> new Globe(simulationProperties, vegetation);
-            case WATER_WORLD -> new WaterWorld(simulationProperties, vegetation);
-        };
         Mutation mutation = switch(simulationProperties.getMutationVariant()) {
             case RANDOM -> new RandomMutation();
+        };
+        AbstractMovementVariant movement = switch(simulationProperties.getMovementVariant()) {
+            case PREDESTINED -> new PredestinedMovement();
+            case OLD_AGE_AINT_NO_PICNIC -> new OldAgeAintNoPicnic();
+        };
+        AbstractWorldMap map = switch(simulationProperties.getMapVariant()) {
+            case GLOBE -> new Globe(simulationProperties, vegetation, movement);
+            case WATER_WORLD -> new WaterWorld(simulationProperties, vegetation, movement);
         };
         ConsoleMapDisplay observer = new ConsoleMapDisplay();
         map.addObserver(observer);

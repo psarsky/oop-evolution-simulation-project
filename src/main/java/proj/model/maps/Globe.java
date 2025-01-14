@@ -1,5 +1,6 @@
 package proj.model.maps;
 
+import proj.model.movement.AbstractMovementVariant;
 import proj.model.vegetation.AbstractVegetationVariant;
 import proj.simulation.SimulationProperties;
 
@@ -16,7 +17,7 @@ public class Globe extends AbstractWorldMap {
      *
      * @param simulationProperties          The properties defining the map's dimensions and settings
      */
-    public Globe(SimulationProperties simulationProperties, AbstractVegetationVariant vegetationVariant) {
-        super(simulationProperties, vegetationVariant);
+    public Globe(SimulationProperties simulationProperties, AbstractVegetationVariant vegetation, AbstractMovementVariant movement) {
+        super(simulationProperties, vegetation, movement);
     }
 }

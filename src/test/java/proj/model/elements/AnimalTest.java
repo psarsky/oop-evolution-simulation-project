@@ -20,7 +20,6 @@ class AnimalTest {
 
         Animal animal = new Animal(new Vector2d(1, 1),  simulationProperties, new Genotype(simulationProperties, new RandomMutation()));
         assertEquals(animal.getAge(), 0);
-        assertEquals(animal.getMovementVariant(), MovementVariant.PREDESTINED);
         assertEquals(animal.getEnergy(), 10);
         assertEquals(animal.getBirthDate(), 0);
         assertEquals(animal.getDeathDate(), -1);

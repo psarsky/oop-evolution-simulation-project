@@ -7,8 +7,6 @@ Todo:
 package proj.model.elements;
 
 import proj.model.genotype.Genotype;
-import proj.model.maps.MoveValidator;
-import proj.model.movement.MovementVariant;
 import proj.simulation.SimulationProperties;
 import proj.util.MapDirection;
 import proj.util.PositionDirectionTuple;
@@ -24,7 +22,6 @@ import java.util.Random;
  */
 public class Animal implements WorldElement {
     private final static Random random = new Random();
-    private final MovementVariant movementVariant; // Defines how the animal moves in the simulation.
     private final Genotype genotype;
     private final List<Animal> children = new ArrayList<>(); // List of all offspring produced by this animal.
     private final int energyToReproduce; // Energy required for the animal to reproduce.
@@ -48,7 +45,6 @@ public class Animal implements WorldElement {
      * @param simulationProperties      Properties defining the simulation's configuration.
      */
     public Animal(Vector2d position, SimulationProperties simulationProperties, Genotype genotype) {
-        this.movementVariant = simulationProperties.getMovementVariant();
         this.genotype = genotype;
         this.energyToReproduce = simulationProperties.getEnergyNeededToReproduce();
         this.energyToPassToChild = simulationProperties.getEnergyToPassToChild();
@@ -67,17 +63,10 @@ public class Animal implements WorldElement {
     /**
      * Moves the animal based on its current genotype and validates the new position using a MoveValidator.
      *
-     * @param validator         Validator to ensure valid movement within the map boundaries.
+     * @param newPositionDirection         Tuple containing the new position and direction of the animal.
      */
-    public void move(MoveValidator validator) {
-        if(movementVariant == MovementVariant.PREDESTINED) {
-            this.geneIndex = (this.geneIndex + 1) % this.genes.length;
-        }
-        int rotationAngle = this.genes[geneIndex];
-        MapDirection newDirection = this.positionDirection.direction().rotate(rotationAngle);
-        Vector2d newPosition = this.positionDirection.position().add(this.positionDirection.direction().toUnitVector());
-
-        this.positionDirection = validator.correctPosition(this.positionDirection.position(), newPosition, newDirection);
+    public void move(PositionDirectionTuple newPositionDirection) {
+        this.positionDirection = newPositionDirection;
         this.age++;
         this.energy = Math.max(0, this.energy - this.energyCostToMove);
     }
@@ -151,6 +140,10 @@ public class Animal implements WorldElement {
         return this.positionDirection.position();
     }
 
+    public MapDirection getDir() {
+        return this.positionDirection.direction();
+    }
+
     /**
      * Gets the current energy level of the animal.
      *
@@ -174,7 +167,6 @@ public class Animal implements WorldElement {
     public int getChildrenMade() {return this.childrenMade;}
     public int getPlantsEaten() {return this.plantsEaten;}
     public int getAge() {return this.age;}
-    public MovementVariant getMovementVariant() {return this.movementVariant;}
 
     // Setters
 
@@ -204,4 +196,8 @@ public class Animal implements WorldElement {
     public void setDeathDate(int date) {
         this.deathDate = date;
     }
+
+    public int getGeneIndex() {return this.geneIndex;}
+
+    public void setGeneIndex(int newGeneIndex) {this.geneIndex = newGeneIndex;}
 }

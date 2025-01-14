@@ -3,6 +3,7 @@ package proj.model.maps;
 import proj.model.elements.Animal;
 import proj.model.elements.Plant;
 import proj.model.elements.WorldElement;
+import proj.model.movement.AbstractMovementVariant;
 import proj.model.vegetation.AbstractVegetationVariant;
 import proj.presenter.MapChangeListener;
 import proj.presenter.MapVisualizer;
@@ -24,6 +25,7 @@ public abstract class AbstractWorldMap implements MoveValidator {
     protected final List<MapChangeListener> observers; // List of observers notified when the map changes.
     protected final MapVisualizer mapVisualizer; // Visualizer responsible for rendering the map.
     protected final AbstractVegetationVariant vegetation;
+    protected final AbstractMovementVariant movement;
     protected final UUID id; // Unique identifier for the map instance.
     protected HashMap<Vector2d, List<Animal>> animals; // Mapping of positions to animals.
     protected HashMap<Vector2d, Plant> plants; // Mapping of positions to plants.
@@ -36,10 +38,11 @@ public abstract class AbstractWorldMap implements MoveValidator {
      *
      * @param simulationProperties      Properties defining the simulation parameters.
      */
-    public AbstractWorldMap(SimulationProperties simulationProperties, AbstractVegetationVariant vegetation) {
+    public AbstractWorldMap(SimulationProperties simulationProperties, AbstractVegetationVariant vegetation, AbstractMovementVariant movement) {
         this.observers = new ArrayList<>();
         this.mapVisualizer = new MapVisualizer(this);
         this.vegetation = vegetation;
+        this.movement = movement;
         this.id = UUID.randomUUID();
         this.animals = new HashMap<>();
         this.plants = new HashMap<>();
@@ -92,7 +95,7 @@ public abstract class AbstractWorldMap implements MoveValidator {
     public void move(Animal animal) {
         Vector2d oldPos = animal.getPos();
         this.animals.get(animal.getPos()).remove(animal);
-        animal.move(this);
+        movement.move(animal, this);
         placeAnimal(animal.getPos(), animal);
         notifyObservers("Animal moved from " + oldPos + " to " + animal.getPos() + ".");
     }

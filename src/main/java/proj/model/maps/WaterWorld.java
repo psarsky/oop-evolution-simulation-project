@@ -2,6 +2,7 @@ package proj.model.maps;
 
 import proj.model.elements.Water;
 import proj.model.elements.WorldElement;
+import proj.model.movement.AbstractMovementVariant;
 import proj.model.vegetation.AbstractVegetationVariant;
 import proj.simulation.SimulationProperties;
 import proj.util.MapDirection;
@@ -25,8 +26,8 @@ public class WaterWorld extends AbstractWorldMap {
      *
      * @param simulationProperties      The properties defining the map's dimensions and settings
      */
-    public WaterWorld(SimulationProperties simulationProperties, AbstractVegetationVariant vegetationVariant) {
-        super(simulationProperties, vegetationVariant);
+    public WaterWorld(SimulationProperties simulationProperties, AbstractVegetationVariant vegetationVariant, AbstractMovementVariant movement) {
+        super(simulationProperties, vegetationVariant, movement);
         RandomPositionGenerator randomPositionGeneratorWater =
                 new RandomPositionGenerator(this.simulationProperties.getWidth(), this.simulationProperties.getHeight(), this.simulationProperties.getWidth() * this.simulationProperties.getHeight() / 10);
 
