@@ -3,6 +3,7 @@ package proj.model.maps;
 import org.junit.jupiter.api.Test;
 import proj.model.elements.Animal;
 import proj.model.genotype.Genotype;
+import proj.model.genotype.RandomMutation;
 import proj.model.movement.MovementVariant;
 import proj.model.genotype.MutationVariant;
 import proj.model.elements.Plant;
@@ -20,7 +21,8 @@ class GlobeTest {
 
     @Test
     public void correctPosition() {
-        Globe map = new Globe(new SimulationProperties(6, MovementVariant.PREDESTINED, MutationVariant.RANDOM, MapVariant.GLOBE, VegetationVariant.FORESTED_EQUATOR, 5, 5, 2, 0, 0, 0, 100, 1, 40, 20, 0, 1, 0, 0, 0));
+        SimulationProperties simulationProperties = new SimulationProperties(6, MovementVariant.PREDESTINED, MutationVariant.RANDOM, MapVariant.GLOBE, VegetationVariant.FORESTED_EQUATOR, 5, 5, 2, 0, 0, 0, 100, 1, 40, 20, 0, 1, 0, 0, 0);
+        Globe map = new Globe(simulationProperties, new ForestedEquator(simulationProperties.getEquatorHeight(), simulationProperties.getWidth(), simulationProperties.getHeight()));
         assertEquals(new PositionDirectionTuple(new Vector2d(0, 1), MapDirection.NORTH), map.correctPosition(new Vector2d(0, 0), new Vector2d(0, -1), MapDirection.SOUTH));
         assertEquals(new PositionDirectionTuple(new Vector2d(0, 3), MapDirection.SOUTH), map.correctPosition(new Vector2d(0, 4), new Vector2d(0, 5), MapDirection.NORTH));
         assertEquals(new PositionDirectionTuple(new Vector2d(1, 1), MapDirection.NORTHWEST), map.correctPosition(new Vector2d(0, 0), new Vector2d(1, -1), MapDirection.SOUTHWEST));
@@ -41,10 +43,9 @@ class GlobeTest {
     @Test
     public void eatPlants() {
         SimulationProperties simulationProperties = new SimulationProperties(6, MovementVariant.PREDESTINED, MutationVariant.RANDOM, MapVariant.GLOBE, VegetationVariant.FORESTED_EQUATOR, 5, 5, 1, 0, 0, 0, 10, 1, 40, 20, 0, 1, 0, 0, 0);
-        Globe map = new Globe(simulationProperties);
-        ForestedEquator forestedEquator = new ForestedEquator(simulationProperties.getEquatorHeight(), simulationProperties.getWidth(), simulationProperties.getHeight());
-        Simulation simulation = new Simulation(map, forestedEquator, simulationProperties);
-        map.placeAnimal(new Vector2d(0, 0), new Animal(new Vector2d(0, 0), new Genotype(simulationProperties), simulationProperties));
+        Globe map = new Globe(simulationProperties, new ForestedEquator(simulationProperties.getEquatorHeight(), simulationProperties.getWidth(), simulationProperties.getHeight()));
+        Simulation simulation = new Simulation(map, simulationProperties, new RandomMutation());
+        map.placeAnimal(new Vector2d(0, 0), new Animal(new Vector2d(0, 0), simulationProperties, new Genotype(simulationProperties, new RandomMutation())));
         map.placePlant(new Vector2d(0, 0), new Plant(new Vector2d(0, 0)));
         simulation.eat();
         assertEquals(11, map.getAnimals().get(new Vector2d(0, 0)).getFirst().getEnergy());
@@ -53,11 +54,10 @@ class GlobeTest {
     @Test
     public void twoAnimalsEatPlants() {
         SimulationProperties simulationProperties = new SimulationProperties(6, MovementVariant.PREDESTINED, MutationVariant.RANDOM, MapVariant.GLOBE, VegetationVariant.FORESTED_EQUATOR, 5, 5, 1, 0, 0, 0, 10, 1, 40, 20, 0, 1, 0, 0, 0);
-        Globe map = new Globe(simulationProperties);
-        ForestedEquator forestedEquator = new ForestedEquator(simulationProperties.getEquatorHeight(), simulationProperties.getWidth(), simulationProperties.getHeight());
-        Simulation simulation = new Simulation(map, forestedEquator, simulationProperties);
-        map.placeAnimal(new Vector2d(0, 0), new Animal(new Vector2d(0, 0), new Genotype(simulationProperties), simulationProperties));
-        map.placeAnimal(new Vector2d(0, 0), new Animal(new Vector2d(0, 0), new Genotype(simulationProperties), simulationProperties));
+        Globe map = new Globe(simulationProperties, new ForestedEquator(simulationProperties.getEquatorHeight(), simulationProperties.getWidth(), simulationProperties.getHeight()));
+        Simulation simulation = new Simulation(map, simulationProperties, new RandomMutation());
+        map.placeAnimal(new Vector2d(0, 0), new Animal(new Vector2d(0, 0), simulationProperties, new Genotype(simulationProperties, new RandomMutation())));
+        map.placeAnimal(new Vector2d(0, 0), new Animal(new Vector2d(0, 0), simulationProperties, new Genotype(simulationProperties, new RandomMutation())));
         map.placePlant(new Vector2d(0, 0), new Plant(new Vector2d(0, 0)));
         simulation.eat();
         assertEquals(11, map.getAnimals().get(new Vector2d(0, 0)).get(0).getEnergy());
@@ -67,11 +67,10 @@ class GlobeTest {
     @Test
     public void reproduce() {
         SimulationProperties simulationProperties = new SimulationProperties(6, MovementVariant.PREDESTINED, MutationVariant.RANDOM, MapVariant.GLOBE, VegetationVariant.FORESTED_EQUATOR, 5, 5, 1, 0, 0, 0, 100, 1, 40, 20, 0, 1, 0, 0, 0);
-        Globe map = new Globe(simulationProperties);
-        ForestedEquator forestedEquator = new ForestedEquator(simulationProperties.getEquatorHeight(), simulationProperties.getWidth(), simulationProperties.getHeight());
-        Simulation simulation = new Simulation(map, forestedEquator, simulationProperties);
-        map.placeAnimal(new Vector2d(0, 0), new Animal(new Vector2d(0, 0), new Genotype(simulationProperties), simulationProperties));
-        map.placeAnimal(new Vector2d(0, 0), new Animal(new Vector2d(0, 0),  new Genotype(simulationProperties),simulationProperties));
+        Globe map = new Globe(simulationProperties, new ForestedEquator(simulationProperties.getEquatorHeight(), simulationProperties.getWidth(), simulationProperties.getHeight()));
+        Simulation simulation = new Simulation(map, simulationProperties, new RandomMutation());
+        map.placeAnimal(new Vector2d(0, 0), new Animal(new Vector2d(0, 0), simulationProperties, new Genotype(simulationProperties, new RandomMutation())));
+        map.placeAnimal(new Vector2d(0, 0), new Animal(new Vector2d(0, 0), simulationProperties, new Genotype(simulationProperties, new RandomMutation())));
         map.placePlant(new Vector2d(0, 0), new Plant(new Vector2d(0, 0)));
         simulation.reproduce();
         assertEquals(80, map.getAnimals().get(new Vector2d(0, 0)).get(0).getEnergy());

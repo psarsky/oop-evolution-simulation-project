@@ -13,14 +13,16 @@ import java.util.Random;
 public class Genotype {
     private final int[] genes; // Array representing the genes of this genotype
     private final SimulationProperties simulationProperties; // Simulation configuration properties
+    private final Mutation mutation;
 
     /**
      * Constructs a genotype with random genes of the specified size, using the provided simulation properties.
      *
      * @param simulationProperties          Specified properties of the current simulation
      */
-    public Genotype(SimulationProperties simulationProperties) {
+    public Genotype(SimulationProperties simulationProperties, Mutation mutation) {
         this.simulationProperties = simulationProperties;
+        this.mutation = mutation;
         this.genes = new int[simulationProperties.getGenotypeSize()];
         initializeRandomGenes();
     }
@@ -33,8 +35,9 @@ public class Genotype {
      * @param parent2                       The second parent (Animal)
      * @param simulationProperties          Specified properties of the current simulation
      */
-    public Genotype(Animal parent1, Animal parent2, SimulationProperties simulationProperties) {
+    public Genotype(Animal parent1, Animal parent2, SimulationProperties simulationProperties, Mutation mutation) {
         this.simulationProperties = simulationProperties;
+        this.mutation = mutation;
         this.genes = new int[simulationProperties.getGenotypeSize()];
         generateChildGenes(parent1, parent2);
     }
@@ -59,8 +62,8 @@ public class Genotype {
      * @param parent2           The second parent (Animal)
      */
     public void generateChildGenes(Animal parent1, Animal parent2) {
-        int[] genotype1 = parent1.getGenotype(); // Genotype of parent 1
-        int[] genotype2 = parent2.getGenotype(); // Genotype of parent 2
+        int[] genotype1 = parent1.getGenes(); // Genotype of parent 1
+        int[] genotype2 = parent2.getGenes(); // Genotype of parent 2
 
         int energy1 = parent1.getEnergy(); // Energy level of parent 1
         int energy2 = parent2.getEnergy(); // Energy level of parent 2
@@ -84,19 +87,7 @@ public class Genotype {
         }
 
         // Apply mutation to the child's genes
-        performMutation(genes, simulationProperties);
-    }
-
-    /**
-     * Applies the mutation strategy to the genotype, modifying the genes according to the simulation's rules.
-     *
-     * @param genes                         The array of genes to be mutated
-     * @param simulationProperties          The simulation configuration properties that define mutation behavior
-     */
-    public void performMutation(int[] genes, SimulationProperties simulationProperties) {
-        // Currently, only RandomMutation is implemented. Placeholder for future mutation variants.
-        Mutation mutationVariant = simulationProperties.getMutationVariant() == MutationVariant.RANDOM ? new RandomMutation() : new RandomMutation(); // Placeholder for other mutation types
-        mutationVariant.applyMutation(genes, simulationProperties);
+        mutation.applyMutation(genes, simulationProperties);
     }
 
     /**
@@ -127,4 +118,5 @@ public class Genotype {
     public int[] getGenes() {
         return genes;
     }
+    public Mutation getMutation() {return this.mutation;}
 }

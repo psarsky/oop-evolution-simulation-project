@@ -2,6 +2,7 @@ package proj.model.maps;
 
 import proj.model.elements.Water;
 import proj.model.elements.WorldElement;
+import proj.model.vegetation.AbstractVegetationVariant;
 import proj.simulation.SimulationProperties;
 import proj.util.MapDirection;
 import proj.util.PositionDirectionTuple;
@@ -24,15 +25,23 @@ public class WaterWorld extends AbstractWorldMap {
      *
      * @param simulationProperties      The properties defining the map's dimensions and settings
      */
-    public WaterWorld(SimulationProperties simulationProperties) {
-        super(simulationProperties);
+    public WaterWorld(SimulationProperties simulationProperties, AbstractVegetationVariant vegetationVariant) {
+        super(simulationProperties, vegetationVariant);
         RandomPositionGenerator randomPositionGeneratorWater =
-                new RandomPositionGenerator(this.width, this.height, this.width * this.height / 10);
+                new RandomPositionGenerator(this.simulationProperties.getWidth(), this.simulationProperties.getHeight(), this.simulationProperties.getWidth() * this.simulationProperties.getHeight() / 10);
 
         // Populate water fields at random positions
         for (Vector2d pos : randomPositionGeneratorWater) {
             this.waterFields.put(pos, new Water(pos));
         }
+    }
+    
+    @Override
+    public void updateWorldElements() {
+        super.updateWorldElements();
+        boolean highTide = this.simulationProperties.getDaysElapsed() % 10 < 5;
+        waterFlow(highTide, this.simulationProperties.getWaterViolence());
+        generateFreePlantPositions();
     }
 
     /**
@@ -72,8 +81,8 @@ public class WaterWorld extends AbstractWorldMap {
                 this.waterFields.put(newPosition, new Water(newPosition));
 
                 // Remove water if it expands out of bounds
-                if (newPosition.x() < 0 || newPosition.x() > width - 1 ||
-                        newPosition.y() < 0 || newPosition.y() > height - 1) {
+                if (newPosition.x() < 0 || newPosition.x() > simulationProperties.getWidth() - 1 ||
+                        newPosition.y() < 0 || newPosition.y() > simulationProperties.getHeight() - 1) {
                     this.waterFields.remove(newPosition);
                 }
 
@@ -119,8 +128,8 @@ public class WaterWorld extends AbstractWorldMap {
      */
     public void generateFreePlantPositions() {
         this.freePlantPositions.clear();
-        for (int x = 0; x < this.width; x++) {
-            for (int y = 0; y < this.height; y++) {
+        for (int x = 0; x < this.simulationProperties.getWidth(); x++) {
+            for (int y = 0; y < this.simulationProperties.getHeight(); y++) {
                 Vector2d position = new Vector2d(x, y);
                 if (!this.waterFields.containsKey(position)) this.freePlantPositions.add(position);
             }

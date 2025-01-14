@@ -3,6 +3,7 @@ package proj.model.maps;
 import proj.model.elements.Animal;
 import proj.model.elements.Plant;
 import proj.model.elements.WorldElement;
+import proj.model.vegetation.AbstractVegetationVariant;
 import proj.presenter.MapChangeListener;
 import proj.presenter.MapVisualizer;
 import proj.simulation.SimulationProperties;
@@ -11,10 +12,7 @@ import proj.util.MapDirection;
 import proj.util.PositionDirectionTuple;
 import proj.util.Vector2d;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Represents an abstract world map for a simulation.
@@ -22,15 +20,15 @@ import java.util.UUID;
  * while notifying observers about changes.
  */
 public abstract class AbstractWorldMap implements MoveValidator {
+    private static final Random random = new Random();
     protected final List<MapChangeListener> observers; // List of observers notified when the map changes.
     protected final MapVisualizer mapVisualizer; // Visualizer responsible for rendering the map.
+    protected final AbstractVegetationVariant vegetation;
     protected final UUID id; // Unique identifier for the map instance.
     protected HashMap<Vector2d, List<Animal>> animals; // Mapping of positions to animals.
     protected HashMap<Vector2d, Plant> plants; // Mapping of positions to plants.
     protected List<Vector2d> freePlantPositions; // List of free positions available for plants.
-    // Dimensions of the map.
-    protected int width; // Width of the map
-    protected int height; // Height of the map
+    protected SimulationProperties simulationProperties;
 
     /**
      * Constructs an abstract world map using simulation properties.
@@ -38,19 +36,19 @@ public abstract class AbstractWorldMap implements MoveValidator {
      *
      * @param simulationProperties      Properties defining the simulation parameters.
      */
-    public AbstractWorldMap(SimulationProperties simulationProperties) {
+    public AbstractWorldMap(SimulationProperties simulationProperties, AbstractVegetationVariant vegetation) {
         this.observers = new ArrayList<>();
         this.mapVisualizer = new MapVisualizer(this);
+        this.vegetation = vegetation;
         this.id = UUID.randomUUID();
         this.animals = new HashMap<>();
         this.plants = new HashMap<>();
         this.freePlantPositions = new ArrayList<>();
-        this.width = simulationProperties.getWidth();
-        this.height = simulationProperties.getHeight();
+        this.simulationProperties = simulationProperties;
 
         // Populate the list of free positions with all positions on the map.
-        for (int x = 0; x < this.width; x++) {
-            for (int y = 0; y < this.height; y++) {
+        for (int x = 0; x < this.simulationProperties.getWidth(); x++) {
+            for (int y = 0; y < this.simulationProperties.getHeight(); y++) {
                 Vector2d position = new Vector2d(x, y);
                 this.freePlantPositions.add(position);
             }
@@ -86,18 +84,6 @@ public abstract class AbstractWorldMap implements MoveValidator {
     }
 
     /**
-     * Places a plant at a given position on the map.
-     * Removes the position from the list of free plant positions.
-     *
-     * @param position      The position to place the plant.
-     * @param plant         The plant to place.
-     */
-    public void placePlant(Vector2d position, Plant plant) {
-        this.plants.put(position, plant);
-        this.freePlantPositions.remove(position);
-    }
-
-    /**
      * Moves an animal to a new position on the map.
      * Updates the animal's position and notifies observers of the change.
      *
@@ -109,6 +95,36 @@ public abstract class AbstractWorldMap implements MoveValidator {
         animal.move(this);
         placeAnimal(animal.getPos(), animal);
         notifyObservers("Animal moved from " + oldPos + " to " + animal.getPos() + ".");
+    }
+
+    /**
+     * Places a plant at a given position on the map.
+     * Removes the position from the list of free plant positions.
+     *
+     * @param position      The position to place the plant.
+     * @param plant         The plant to place.
+     */
+    public void placePlant(Vector2d position, Plant plant) {
+        this.plants.put(position, plant);
+        this.freePlantPositions.remove(position);
+    }
+
+    public void spawnPlant() {
+        while (!this.freePlantPositions.isEmpty()) {
+            Vector2d plantPosition = this.freePlantPositions.get(random.nextInt(this.freePlantPositions.size()));
+            if (this.vegetation.validatePlantPosition(plantPosition)) {
+                Plant plant = new Plant(plantPosition);
+                placePlant(plantPosition, plant);
+                break;
+            }
+        }
+    }
+
+    public void updateWorldElements() {
+        for (int i = 0; i < this.simulationProperties.getPlantsPerDay(); i++) {
+            spawnPlant();
+        }
+        notifyObservers("New plants placed.");
     }
 
     /**
@@ -158,7 +174,7 @@ public abstract class AbstractWorldMap implements MoveValidator {
      */
     @Override
     public PositionDirectionTuple correctPosition(Vector2d oldPosition, Vector2d newPosition, MapDirection direction) {
-        int newX = (newPosition.x() + this.width) % this.width;
+        int newX = (newPosition.x() + this.simulationProperties.getWidth()) % this.simulationProperties.getWidth();
         int newY = newPosition.y();
         MapDirection newDirection = direction;
 
@@ -172,8 +188,8 @@ public abstract class AbstractWorldMap implements MoveValidator {
                 default -> direction;
             };
         }
-        if (newY >= this.height) {
-            newY = this.height - 2;
+        if (newY >= this.simulationProperties.getHeight()) {
+            newY = this.simulationProperties.getHeight() - 2;
             newDirection = switch (direction) {
                 case NORTH -> MapDirection.SOUTH;
                 case NORTHEAST -> MapDirection.SOUTHEAST;
@@ -212,6 +228,6 @@ public abstract class AbstractWorldMap implements MoveValidator {
     }
 
     public Boundary getCurrentBounds() {
-        return new Boundary(new Vector2d(0, 0), new Vector2d(this.width - 1, this.height - 1));
+        return new Boundary(new Vector2d(0, 0), new Vector2d(this.simulationProperties.getWidth() - 1, this.simulationProperties.getHeight() - 1));
     }
 }

@@ -1,6 +1,8 @@
 package proj;
 
+import proj.model.genotype.Mutation;
 import proj.model.genotype.MutationVariant;
+import proj.model.genotype.RandomMutation;
 import proj.model.maps.AbstractWorldMap;
 import proj.model.maps.Globe;
 import proj.model.maps.MapVariant;
@@ -26,8 +28,8 @@ public class World {
                 30,     // height
                 4,      // equator height
                 20,     // animal count
-                300,    // plant count
-                20,     // plants per day
+                100,    // plant count
+                10,     // plants per day
                 10,     // start energy
                 5,      // plant energy
                 10,     // energy to reproduce
@@ -36,7 +38,7 @@ public class World {
                 100,    // simulation step
                 0,      // min mutation
                 0,      // max mutation
-                0     // water violence
+                50      // water violence
         );
         Simulation simulation = getSimulation(simulationProperties);
         simulation.run();
@@ -44,12 +46,22 @@ public class World {
     }
 
     private static Simulation getSimulation(SimulationProperties simulationProperties) {
-        AbstractWorldMap map = simulationProperties.getMapVariant() == MapVariant.WATER_WORLD ? new WaterWorld(simulationProperties) : new Globe(simulationProperties);
-        AbstractVegetationVariant vegetationVariant = simulationProperties.getVegetationVariant() == VegetationVariant.FORESTED_EQUATOR ?
-                new ForestedEquator(simulationProperties.getEquatorHeight(), simulationProperties.getWidth(), simulationProperties.getHeight()) :
-                new ForestedEquator(simulationProperties.getEquatorHeight(), simulationProperties.getWidth(), simulationProperties.getHeight()); // placeholder for more options
+        AbstractVegetationVariant vegetation = switch(simulationProperties.getVegetationVariant()) {
+            case FORESTED_EQUATOR -> new ForestedEquator(
+                    simulationProperties.getEquatorHeight(),
+                    simulationProperties.getWidth(),
+                    simulationProperties.getHeight()
+            );
+        };
+        AbstractWorldMap map = switch(simulationProperties.getMapVariant()) {
+            case GLOBE -> new Globe(simulationProperties, vegetation);
+            case WATER_WORLD -> new WaterWorld(simulationProperties, vegetation);
+        };
+        Mutation mutation = switch(simulationProperties.getMutationVariant()) {
+            case RANDOM -> new RandomMutation();
+        };
         ConsoleMapDisplay observer = new ConsoleMapDisplay();
         map.addObserver(observer);
-        return new Simulation(map, vegetationVariant, simulationProperties);
+        return new Simulation(map, simulationProperties, mutation);
     }
 }

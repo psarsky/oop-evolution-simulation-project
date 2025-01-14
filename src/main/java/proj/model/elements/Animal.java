@@ -7,7 +7,6 @@ Todo:
 package proj.model.elements;
 
 import proj.model.genotype.Genotype;
-import proj.model.genotype.MutationVariant;
 import proj.model.maps.MoveValidator;
 import proj.model.movement.MovementVariant;
 import proj.simulation.SimulationProperties;
@@ -26,7 +25,7 @@ import java.util.Random;
 public class Animal implements WorldElement {
     private final static Random random = new Random();
     private final MovementVariant movementVariant; // Defines how the animal moves in the simulation.
-    private final MutationVariant mutationVariant; // Mutation strategy applied to the animal's genotype during reproduction.
+    private final Genotype genotype;
     private final List<Animal> children = new ArrayList<>(); // List of all offspring produced by this animal.
     private final int energyToReproduce; // Energy required for the animal to reproduce.
     private final int energyToPassToChild; // Energy passed to offspring during reproduction.
@@ -39,7 +38,7 @@ public class Animal implements WorldElement {
     private int deathDate; // Day the animal died (or -1 if still alive).
     private int plantsEaten; // Total number of plants consumed by the animal.
     private int childrenMade; // Total number of offspring produced by the animal.
-    private int[] genotype; // Genetic sequence defining the animal's behavior and traits.
+    private int[] genes; // Genetic sequence defining the animal's behavior and traits.
 
     /**
      * Constructs a new Animal object with initial parameters.
@@ -48,8 +47,9 @@ public class Animal implements WorldElement {
      * @param genotype                  Genotype object containing the animal's genes.
      * @param simulationProperties      Properties defining the simulation's configuration.
      */
-    public Animal(Vector2d position, Genotype genotype, SimulationProperties simulationProperties) {
+    public Animal(Vector2d position, SimulationProperties simulationProperties, Genotype genotype) {
         this.movementVariant = simulationProperties.getMovementVariant();
+        this.genotype = genotype;
         this.energyToReproduce = simulationProperties.getEnergyNeededToReproduce();
         this.energyToPassToChild = simulationProperties.getEnergyToPassToChild();
         this.energyCostToMove = simulationProperties.getEnergyCostToMove();
@@ -61,8 +61,7 @@ public class Animal implements WorldElement {
         this.deathDate = -1;
         this.plantsEaten = 0;
         this.childrenMade = 0;
-        this.mutationVariant = simulationProperties.getMutationVariant();
-        this.genotype = genotype.getGenes();
+        this.genes = this.genotype.getGenes();
     }
 
     /**
@@ -72,9 +71,9 @@ public class Animal implements WorldElement {
      */
     public void move(MoveValidator validator) {
         if(movementVariant == MovementVariant.PREDESTINED) {
-            this.geneIndex = (this.geneIndex + 1) % this.genotype.length;
+            this.geneIndex = (this.geneIndex + 1) % this.genes.length;
         }
-        int rotationAngle = this.genotype[geneIndex];
+        int rotationAngle = this.genes[geneIndex];
         MapDirection newDirection = this.positionDirection.direction().rotate(rotationAngle);
         Vector2d newPosition = this.positionDirection.position().add(this.positionDirection.direction().toUnitVector());
 
@@ -102,14 +101,14 @@ public class Animal implements WorldElement {
      */
     public Animal reproduce(Animal mate, SimulationProperties simulationProperties) {
         if (this.energy >= this.energyToReproduce && mate.energy >= mate.energyToReproduce) {
-            Genotype childGenotype = new Genotype(this, mate, simulationProperties);
+            Genotype childGenotype = new Genotype(this, mate, simulationProperties, this.genotype.getMutation());
 
             int energyForChild = Math.min(this.energyToPassToChild, Math.min(this.energy, mate.energy));
 
             this.energy -= energyForChild;
             mate.energy -= energyForChild;
 
-            Animal child = new Animal(this.positionDirection.position(), childGenotype, simulationProperties);
+            Animal child = new Animal(this.positionDirection.position(), simulationProperties, childGenotype);
             child.setEnergy(2 * energyForChild);
 
             this.addChildToList(child);
@@ -162,12 +161,12 @@ public class Animal implements WorldElement {
     }
 
     /**
-     * Gets the genotype array of the animal.
+     * Gets the gene array of the animal.
      *
-     * @return              The animal's genotype array.
+     * @return              The animal's gene array.
      */
-    public int[] getGenotype() {
-        return this.genotype;
+    public int[] getGenes() {
+        return this.genes;
     }
     public ElementType getElementType() {return ElementType.ANIMAL;}
     public int getBirthDate() {return this.birthDate;}
@@ -189,12 +188,12 @@ public class Animal implements WorldElement {
     }
 
     /**
-     * Sets the genotype of the animal.
+     * Sets the genes of the animal.
      *
-     * @param genotype          The new genotype array.
+     * @param genes          The new genes array.
      */
-    public void setGenotype(int[] genotype) {
-        this.genotype = genotype;
+    public void setGenes(int[] genes) {
+        this.genes = genes;
     }
 
     /**
