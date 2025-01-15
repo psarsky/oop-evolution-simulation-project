@@ -23,7 +23,7 @@ public class World {
         System.out.println("START");
         SimulationProperties simulationProperties = new SimulationProperties(
                 100,    // gene count
-                MovementVariant.OLD_AGE_AINT_NO_PICNIC,
+                MovementVariant.PREDESTINED,
                 MutationVariant.RANDOM,
                 MapVariant.WATER_WORLD,
                 VegetationVariant.FORESTED_EQUATOR,

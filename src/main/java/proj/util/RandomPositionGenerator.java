@@ -9,6 +9,8 @@ import java.util.Random;
  * The RandomPositionGenerator class generates a list of random, unique positions
  * within a defined width and height. It implements {@link Iterable}, allowing
  * iteration over the generated positions.
+ *
+ * @author <a href="https://github.com/psarsky">psarsky</a>
  */
 public class RandomPositionGenerator implements Iterable<Vector2d> {
     private final List<Vector2d> positions = new ArrayList<>();
@@ -17,12 +19,12 @@ public class RandomPositionGenerator implements Iterable<Vector2d> {
      * Constructs a RandomPositionGenerator to generate random positions within
      * a specified area and count.
      *
-     * @param maxWidth          The maximum width of the area.
-     * @param maxHeight         The maximum height of the area.
-     * @param count             The number of random positions to generate.
+     * @param width  The width of the area.
+     * @param height The height of the area.
+     * @param count  The number of random positions to generate.
      */
-    public RandomPositionGenerator(int maxWidth, int maxHeight, int count) {
-        int[] indices = new int[maxWidth * maxHeight];
+    public RandomPositionGenerator(int width, int height, int count) {
+        int[] indices = new int[width * height];
         for (int i = 0; i < indices.length; i++) indices[i] = i;
 
         Random rand = new Random();
@@ -34,7 +36,7 @@ public class RandomPositionGenerator implements Iterable<Vector2d> {
         }
 
         for (int i = indices.length - 1; i > indices.length - count - 2; i--) {
-            this.positions.add(new Vector2d(indices[i] % maxWidth, indices[i] / maxWidth));
+            this.positions.add(new Vector2d(indices[i] % width, indices[i] / width));
         }
     }
 
@@ -43,35 +45,29 @@ public class RandomPositionGenerator implements Iterable<Vector2d> {
     /**
      * Returns an iterator to iterate over the generated random positions.
      *
-     * @return          An iterator for the random positions.
+     * @return An {@link Iterator} for random positions.
      */
-    public Iterator<Vector2d> iterator() {
-        return new RandomPositionIterator(this);
-    }
+    public Iterator<Vector2d> iterator() {return new RandomPositionIterator(this);}
 
     /**
      * Returns the first position in the list of generated positions.
      *
-     * @return          The first {@link Vector2d} position.
+     * @return The first {@link Vector2d} position.
      */
-    public Vector2d getHead() {
-        return this.positions.getFirst();
-    }
+    public Vector2d getHead() {return this.positions.getFirst();}
 
     /**
      * Returns the last position in the list of generated positions.
      *
-     * @return          The last {@link Vector2d} position.
+     * @return The last {@link Vector2d} position.
      */
-    public Vector2d getTail() {
-        return this.positions.getLast();
-    }
+    public Vector2d getTail() {return this.positions.getLast();}
 
     /**
      * Returns the index of the specified position in the list.
      *
-     * @param pos           The position to find.
-     * @return              The index of the specified position, or -1 if not found.
+     * @param pos A {@link Vector2d} object representing the position to find.
+     * @return    The index of the specified position, or -1 if not found.
      */
     public int getIndex(Vector2d pos) {
         return this.positions.indexOf(pos);
@@ -80,8 +76,8 @@ public class RandomPositionGenerator implements Iterable<Vector2d> {
     /**
      * Returns the position at the specified index in the list.
      *
-     * @param index         The index of the position.
-     * @return              The {@link Vector2d} at the specified index.
+     * @param index The index of the position.
+     * @return      The {@link Vector2d} at the specified index.
      */
     public Vector2d getPos(int index) {
         return this.positions.get(index);
@@ -91,15 +87,17 @@ public class RandomPositionGenerator implements Iterable<Vector2d> {
 /**
  * The RandomPositionIterator class provides an iterator for the
  * {@link RandomPositionGenerator}, allowing traversal of the generated positions.
+ *
+ * @author <a href="https://github.com/psarsky">psarsky</a>
  */
 class RandomPositionIterator implements Iterator<Vector2d> {
     private final RandomPositionGenerator generator;
     private Vector2d current;
 
     /**
-     * Constructs a RandomPositionIterator for the specified generator.
+     * Constructs a {@code RandomPositionIterator} for the specified generator.
      *
-     * @param generator         The {@link RandomPositionGenerator} to iterate over.
+     * @param generator The {@link RandomPositionGenerator} to iterate over.
      */
     RandomPositionIterator(RandomPositionGenerator generator) {
         this.current = generator.getHead();
@@ -109,7 +107,7 @@ class RandomPositionIterator implements Iterator<Vector2d> {
     /**
      * Returns the next position in the iteration.
      *
-     * @return          The next {@link Vector2d} position.
+     * @return The next {@link Vector2d} position.
      */
     public Vector2d next() {
         Vector2d data = this.current;
@@ -121,16 +119,14 @@ class RandomPositionIterator implements Iterator<Vector2d> {
     /**
      * Checks if there are more positions to iterate over.
      *
-     * @return          {@code true} if there are more positions; {@code false} otherwise.
+     * @return {@code true} if there are more positions; {@code false} otherwise.
      */
-    public boolean hasNext() {
-        return !this.current.equals(this.generator.getTail());
-    }
+    public boolean hasNext() {return !this.current.equals(this.generator.getTail());}
 
     /**
      * This operation is not supported for this iterator.
      *
-     * @throws          UnsupportedOperationException if invoked.
+     * @throws UnsupportedOperationException if invoked.
      */
     public void remove() {
         throw new UnsupportedOperationException();

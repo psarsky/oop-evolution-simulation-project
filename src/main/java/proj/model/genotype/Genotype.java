@@ -9,16 +9,19 @@ import java.util.Random;
 /**
  * Represents a genotype, which is a collection of genes describing an animal's movement behavior.
  * The genotype supports operations such as mutation and child gene generation based on parent genotypes.
+ *
+ * @author <a href="https://github.com/jakubkalinski0">jakubkalinski0</a>
  */
 public class Genotype {
-    private final int[] genes; // Array representing the genes of this genotype
-    private final SimulationProperties simulationProperties; // Simulation configuration properties
-    private final Mutation mutation;
+    private final int[] genes;                                  // Array representing the genes of this genotype
+    private final SimulationProperties simulationProperties;    // Simulation configuration properties
+    private final Mutation mutation;                            // The gene mutation utilized in the genotype.
 
     /**
-     * Constructs a genotype with random genes of the specified size, using the provided simulation properties.
+     * Constructs a {@code Genotype} with random genes of the specified size, using the provided simulation properties.
      *
-     * @param simulationProperties          Specified properties of the current simulation
+     * @param simulationProperties  Specified properties of the current simulation ({@link SimulationProperties}).
+     * @param mutation              The gene mutation utilized in the genotype ({@link Mutation}).
      */
     public Genotype(SimulationProperties simulationProperties, Mutation mutation) {
         this.simulationProperties = simulationProperties;
@@ -28,12 +31,12 @@ public class Genotype {
     }
 
     /**
-     * Constructs a genotype with genes of parents with the specified size, using the provided simulation properties
+     * Constructs a {@code Genotype} with genes of parents with the specified size, using the provided simulation properties
      * and parents' genes.
      *
-     * @param parent1                       The first parent (Animal)
-     * @param parent2                       The second parent (Animal)
-     * @param simulationProperties          Specified properties of the current simulation
+     * @param parent1               The first parent ({@link Animal}).
+     * @param parent2               The second parent ({@link Animal}).
+     * @param simulationProperties  Specified properties of the current simulation ({@link SimulationProperties}).
      */
     public Genotype(Animal parent1, Animal parent2, SimulationProperties simulationProperties, Mutation mutation) {
         this.simulationProperties = simulationProperties;
@@ -58,8 +61,8 @@ public class Genotype {
      * The child's genes are a combination of sections from each parent's genotype, with
      * the size of each section determined by their respective energy levels.
      *
-     * @param parent1           The first parent (Animal)
-     * @param parent2           The second parent (Animal)
+     * @param parent1 The first parent ({@link Animal}).
+     * @param parent2 The second parent ({@link Animal}).
      */
     public void generateChildGenes(Animal parent1, Animal parent2) {
         int[] genotype1 = parent1.getGenes(); // Genotype of parent 1
@@ -93,30 +96,32 @@ public class Genotype {
     /**
      * Returns a string representation of the genotype.
      *
-     * @return              A string showing the genes in the genotype
+     * @return A {@link String} showing the genes in the genotype.
      */
     @Override
-    public String toString() {
-        return Arrays.toString(genes);
-    }
+    public String toString() {return Arrays.toString(genes);}
 
     /**
      * Returns a hash code value for the genotype, based on its genes.
      *
-     * @return              The hash code value for the genotype
+     * @return The hash code value for the genotype.
      */
     @Override
-    public int hashCode() {
-        return Arrays.hashCode(genes);
-    }
+    public int hashCode() {return Arrays.hashCode(genes);}
+
+    // Getters
 
     /**
-     * Retrieves the array of genes in the genotype.
+     * Gets the array of genes in the genotype.
      *
-     * @return              The array of genes
+     * @return The array of genes.
      */
-    public int[] getGenes() {
-        return genes;
-    }
+    public int[] getGenes() {return genes;}
+
+    /**
+     * Gets the mutation utilized in the genotype.
+     *
+     * @return {@link Mutation} object.
+     */
     public Mutation getMutation() {return this.mutation;}
 }

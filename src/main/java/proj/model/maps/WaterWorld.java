@@ -16,15 +16,17 @@ import java.util.*;
  * Represents a map with a water-world topology.
  * Water occupies a portion of the map and interacts dynamically with other elements,
  * such as plants and animals, based on tides or other conditions.
+ *
+ * @author <a href="https://github.com/psarsky">psarsky</a>, <a href="https://github.com/jakubkalinski0">jakubkalinski0</a>
  */
 public class WaterWorld extends AbstractWorldMap {
     private final HashMap<Vector2d, Water> waterFields = new HashMap<>();
 
     /**
-     * Constructor for the WaterWorld map.
+     * Constructor for the {@code WaterWorld} map.
      * Initializes the map with water fields distributed randomly based on simulation properties.
      *
-     * @param simulationProperties      The properties defining the map's dimensions and settings
+     * @param simulationProperties A {@link SimulationProperties} object defining the map's dimensions and settings
      */
     public WaterWorld(SimulationProperties simulationProperties, AbstractVegetationVariant vegetationVariant, AbstractMovementVariant movement) {
         super(simulationProperties, vegetationVariant, movement);
@@ -36,7 +38,10 @@ public class WaterWorld extends AbstractWorldMap {
             this.waterFields.put(pos, new Water(pos));
         }
     }
-    
+
+    /**
+     * Updates all inanimate elements on the map, including {@link Water} objects.
+     */
     @Override
     public void updateWorldElements() {
         super.updateWorldElements();
@@ -50,7 +55,10 @@ public class WaterWorld extends AbstractWorldMap {
      * During high tide, water expands to new areas, potentially replacing plants and affecting animals.
      * During low tide, water retreats from some areas.
      *
-     * @param highTide      Whether the simulation is currently in high tide
+     * @param highTide      A boolean value determining whether the simulation is currently in high tide.
+     * @param waterViolence A percentage value determining the behavior of water. </br>
+     *                      0% - The volume of water receding during low tide is slightly higher than the volume that returns during high tide. </br>
+     *                      100% - The volume of water receding during low tide is two times lower than the volume that returns during high tide.
      */
     public void waterFlow(boolean highTide, int waterViolence) {
         int waterCount = this.waterFields.size();
@@ -106,7 +114,7 @@ public class WaterWorld extends AbstractWorldMap {
     /**
      * Retrieves a list of water fields that are adjacent to at least one non-water field.
      *
-     * @return     A list of selected water fields
+     * @return A {@link List} of {@link Vector2d} objects representing the positions of selected water fields.
      */
     private List<Vector2d> getSelectedWaterFields() {
         List<Vector2d> selectedWaterFields = new ArrayList<>(this.waterFields.keySet());
@@ -142,10 +150,10 @@ public class WaterWorld extends AbstractWorldMap {
      * If the position is within a water field, it redirects the entity to its previous position
      * and reverses its direction.
      *
-     * @param oldPosition       The original position of the entity
-     * @param newPosition       The attempted new position of the entity
-     * @param direction         The current direction of the entity
-     * @return                  The corrected position and direction tuple
+     * @param oldPosition   The entity's position before the move ({@link Vector2d}).
+     * @param newPosition   The intended position after the move ({@link Vector2d}).
+     * @param direction     The intended direction of movement ({@link MapDirection}).
+     * @return              A {@link PositionDirectionTuple} containing the corrected position and direction.
      */
     @Override
     public PositionDirectionTuple correctPosition(Vector2d oldPosition, Vector2d newPosition, MapDirection direction) {
@@ -159,8 +167,8 @@ public class WaterWorld extends AbstractWorldMap {
     /**
      * Retrieves the object (animal, plant, or water) located at the specified position.
      *
-     * @param position      The position to query
-     * @return              The world element at the specified position, or null if none exists
+     * @param position  A {@link Vector2d} object defining the position to check.
+     * @return          The {@link WorldElement} object at the position, or null if none exists.
      */
     @Override
     public WorldElement objectAt(Vector2d position) {

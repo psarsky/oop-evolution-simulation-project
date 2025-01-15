@@ -17,26 +17,41 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * The {@code Simulation} class represents the core simulation engine, managing the lifecycle of
+ * animals, plants, and other elements on the simulation map.
+ * <p>
+ * This class implements {@link Runnable} to enable running the simulation in a separate thread.
+ * It manages tasks such as animal movement, reproduction, energy consumption, and plant spawning.
+ * </p>
+ *
+ * @author <a href="https://github.com/psarsky">psarsky</a>, <a href="https://github.com/jakubkalinski0">jakubkalinski0</a>
+ */
 public class Simulation implements Runnable {
     private final AbstractWorldMap map;
     private final List<Animal> animals;
     private final SimulationProperties simulationProperties;
     private final List<Animal> deadAnimals;
-    private final Genotype genotype;
     private boolean running;
 
-    // constructor
+    /**
+     * Constructs a new {@code Simulation} instance with the specified map, properties, and mutation strategy.
+     *
+     * @param map                  An {@link AbstractWorldMap} object representing the map to simulate.
+     * @param simulationProperties A {@link SimulationProperties} object defining the simulation's parameters.
+     * @param mutation             A {@link Mutation} object defining the strategy for modifying genotypes.
+     */
     public Simulation(AbstractWorldMap map, SimulationProperties simulationProperties, Mutation mutation) {
         this.map = map;
         this.animals = new ArrayList<>();
         this.simulationProperties = simulationProperties;
         this.deadAnimals = new ArrayList<>();
-        this.genotype = new Genotype(simulationProperties, mutation);
         this.running = true;
 
         RandomPositionGenerator randomPositionGenerator = new RandomPositionGenerator(this.simulationProperties.getWidth(), this.simulationProperties.getHeight(), this.simulationProperties.getAnimalCount());
+        Genotype genotype = new Genotype(simulationProperties, mutation);
         for(Vector2d animalPosition : randomPositionGenerator) {
-            Animal animal = new Animal(animalPosition, this.simulationProperties, this.genotype);
+            Animal animal = new Animal(animalPosition, this.simulationProperties, genotype);
             this.animals.add(animal);
             this.map.placeAnimal(animal.getPos(), animal);
             this.map.notifyObservers("New animal placed at " + animal.getPos() + ".");
@@ -49,6 +64,9 @@ public class Simulation implements Runnable {
         this.map.notifyObservers("Initial plants placed.");
     }
 
+    /**
+     * Starts the simulation, running until there are no animals left or the simulation is paused.
+     */
     @Override
     public void run() {
         while (!this.animals.isEmpty()) {
@@ -70,6 +88,10 @@ public class Simulation implements Runnable {
     }
 
     // day management methods
+
+    /**
+     * Removes animals with zero or negative energy, recording their death details.
+     */
     public void removeDeadAnimals() {
         List<Animal> deadAnimals = new ArrayList<>();
         for (Animal animal : this.animals) {
@@ -83,10 +105,19 @@ public class Simulation implements Runnable {
         this.deadAnimals.addAll(deadAnimals);
     }
 
+    /**
+     * Updates all inanimate elements on the map.
+     */
     public void updateWorldElements() {this.map.updateWorldElements();}
 
+    /**
+     * Moves all animals present on the map.
+     */
     public void moveAnimals() {this.animals.forEach(this.map::move);}
 
+    /**
+     * Allows animals to eat plants if available at their position, prioritizing stronger animals.
+     */
     public void eat() {
         for (Vector2d position : this.map.getAnimals().keySet()) {
             if (this.map.getPlants().containsKey(position)) {
@@ -102,6 +133,9 @@ public class Simulation implements Runnable {
         }
     }
 
+    /**
+     * Manages animal reproduction, creating offspring if energy requirements are met.
+     */
     public void reproduce() {
         this.map.getAnimals().values().forEach(animalList -> {
             if (animalList.size() > 1) {
@@ -123,8 +157,17 @@ public class Simulation implements Runnable {
     }
 
     // utilities
+
+    /**
+     * Toggles the running state of the simulation between paused and active.
+     */
     public void togglePause() {this.running = !this.running;}
 
+    /**
+     * Returns a string representation of the map.
+     *
+     * @return The {@link String} representation of the map.
+     */
     @Override
     public String toString() {return map.toString();}
 }

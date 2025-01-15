@@ -6,6 +6,8 @@ import proj.model.maps.AbstractWorldMap;
  * The ConsoleMapDisplay class implements the {@link MapChangeListener} interface
  * to display updates of the map in the console. Each change in the map triggers
  * a synchronized method to print the current state of the map along with a message.
+ *
+ * @author <a href="https://github.com/psarsky">psarsky</a>
  */
 public class ConsoleMapDisplay implements MapChangeListener {
     private int count = 0; // Counter to track the number of map updates

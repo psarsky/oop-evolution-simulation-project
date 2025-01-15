@@ -19,24 +19,28 @@ import java.util.*;
  * Represents an abstract world map for a simulation.
  * Manages the placement and movement of animals and plants,
  * while notifying observers about changes.
+ *
+ * @author <a href="https://github.com/psarsky">psarsky</a>
  */
 public abstract class AbstractWorldMap implements MoveValidator {
     private static final Random random = new Random();
-    protected final List<MapChangeListener> observers; // List of observers notified when the map changes.
-    protected final MapVisualizer mapVisualizer; // Visualizer responsible for rendering the map.
-    protected final AbstractVegetationVariant vegetation;
-    protected final AbstractMovementVariant movement;
-    protected final UUID id; // Unique identifier for the map instance.
-    protected HashMap<Vector2d, List<Animal>> animals; // Mapping of positions to animals.
-    protected HashMap<Vector2d, Plant> plants; // Mapping of positions to plants.
-    protected List<Vector2d> freePlantPositions; // List of free positions available for plants.
-    protected SimulationProperties simulationProperties;
+    protected final List<MapChangeListener> observers;      // List of observers notified when the map changes.
+    protected final MapVisualizer mapVisualizer;            // Visualizer responsible for rendering the map.
+    protected final AbstractVegetationVariant vegetation;   // Vegetation variant utilized in the map.
+    protected final AbstractMovementVariant movement;       // Movement variant utilized in the map.
+    protected final UUID id;                                // Unique identifier for the map instance.
+    protected HashMap<Vector2d, List<Animal>> animals;      // Mapping of positions to animals.
+    protected HashMap<Vector2d, Plant> plants;              // Mapping of positions to plants.
+    protected List<Vector2d> freePlantPositions;            // List of free positions available for plants.
+    protected SimulationProperties simulationProperties;    // Properties os the simulation in which the map is initialized.
 
     /**
-     * Constructs an abstract world map using simulation properties.
+     * Constructs an {@code AbstractWorldMap} using simulation properties.
      * Initializes the dimensions, animals, plants, and free positions for plants.
      *
-     * @param simulationProperties      Properties defining the simulation parameters.
+     * @param simulationProperties  A {@link SimulationProperties} object defining the simulation parameters.
+     * @param vegetation            An {@link AbstractVegetationVariant} object defining vegetation rules.
+     * @param movement              An {@link AbstractMovementVariant} object defining movement rules.
      */
     public AbstractWorldMap(SimulationProperties simulationProperties, AbstractVegetationVariant vegetation, AbstractMovementVariant movement) {
         this.observers = new ArrayList<>();
@@ -62,8 +66,8 @@ public abstract class AbstractWorldMap implements MoveValidator {
      * Places an animal at a given position on the map.
      * If there are already animals at the position, the new one is added to the list.
      *
-     * @param position      The position to place the animal.
-     * @param animal        The animal to place.
+     * @param position  A {@link Vector2d} object defining the position to place the animal.
+     * @param animal    An {@link Animal} object to place.
      */
     public void placeAnimal(Vector2d position, Animal animal) {
         if (this.animals.containsKey(position)) {
@@ -79,7 +83,7 @@ public abstract class AbstractWorldMap implements MoveValidator {
      * Removes an animal from its current position on the map.
      * Notifies observers that the animal has died.
      *
-     * @param animal        The animal to remove.
+     * @param animal An {@link Animal} object to remove.
      */
     public void removeAnimal(Animal animal) {
         this.animals.get(animal.getPos()).remove(animal);
@@ -90,12 +94,12 @@ public abstract class AbstractWorldMap implements MoveValidator {
      * Moves an animal to a new position on the map.
      * Updates the animal's position and notifies observers of the change.
      *
-     * @param animal        The animal to move.
+     * @param animal An {@link Animal} object to move.
      */
     public void move(Animal animal) {
         Vector2d oldPos = animal.getPos();
         this.animals.get(animal.getPos()).remove(animal);
-        movement.move(animal, this);
+        this.movement.move(animal, this);
         placeAnimal(animal.getPos(), animal);
         notifyObservers("Animal moved from " + oldPos + " to " + animal.getPos() + ".");
     }
@@ -104,14 +108,18 @@ public abstract class AbstractWorldMap implements MoveValidator {
      * Places a plant at a given position on the map.
      * Removes the position from the list of free plant positions.
      *
-     * @param position      The position to place the plant.
-     * @param plant         The plant to place.
+     * @param position  A {@link Vector2d} object defining the position to place the plant.
+     * @param plant     A {@link Plant} object to place.
      */
     public void placePlant(Vector2d position, Plant plant) {
         this.plants.put(position, plant);
         this.freePlantPositions.remove(position);
     }
 
+    /**
+     * Spawns a plant on a random position on the map, according to
+     * vegetation logic defined by the vegetation variant.
+     */
     public void spawnPlant() {
         while (!this.freePlantPositions.isEmpty()) {
             Vector2d plantPosition = this.freePlantPositions.get(random.nextInt(this.freePlantPositions.size()));
@@ -123,6 +131,9 @@ public abstract class AbstractWorldMap implements MoveValidator {
         }
     }
 
+    /**
+     * Updates all inanimate elements on the map (only {@link Plant} objects by default).
+     */
     public void updateWorldElements() {
         for (int i = 0; i < this.simulationProperties.getPlantsPerDay(); i++) {
             spawnPlant();
@@ -133,8 +144,8 @@ public abstract class AbstractWorldMap implements MoveValidator {
     /**
      * Returns the object (animal or plant) located at a given position on the map.
      *
-     * @param position      The position to check.
-     * @return              The object at the position, or null if none exists.
+     * @param position  A {@link Vector2d} object defining the position to check.
+     * @return          The {@link WorldElement} object at the position, or null if none exists.
      */
     public WorldElement objectAt(Vector2d position) {
         if (this.animals.containsKey(position)) {
@@ -148,7 +159,7 @@ public abstract class AbstractWorldMap implements MoveValidator {
     /**
      * Adds an observer to the list of map change listeners.
      *
-     * @param observer      The observer to add.
+     * @param observer The observer to add ({@link MapChangeListener}).
      */
     public void addObserver(MapChangeListener observer) {
         this.observers.add(observer);
@@ -157,7 +168,7 @@ public abstract class AbstractWorldMap implements MoveValidator {
     /**
      * Notifies all observers of a change in the map.
      *
-     * @param message       The message describing the change.
+     * @param message The message describing the change ({@link String}).
      */
     public void notifyObservers(String message) {
         for (MapChangeListener observer : this.observers) {
@@ -170,10 +181,10 @@ public abstract class AbstractWorldMap implements MoveValidator {
      * Handles wrapping and redirection based on the map's dimensions.
      * Wraps positions horizontally and reflects directions vertically.
      *
-     * @param oldPosition       The animal's previous position.
-     * @param newPosition       The animal's new position.
-     * @param direction         The animal's current direction.
-     * @return                  A tuple containing the corrected position and direction.
+     * @param oldPosition   The entity's position before the move ({@link Vector2d}).
+     * @param newPosition   The intended position after the move ({@link Vector2d}).
+     * @param direction     The intended direction of movement ({@link MapDirection}).
+     * @return              A {@link PositionDirectionTuple} containing the corrected position and direction.
      */
     @Override
     public PositionDirectionTuple correctPosition(Vector2d oldPosition, Vector2d newPosition, MapDirection direction) {
@@ -206,30 +217,50 @@ public abstract class AbstractWorldMap implements MoveValidator {
     /**
      * Renders the current map as a string representation using the map visualizer.
      *
-     * @return          The string representation of the map.
+     * @return The {@link String} representation of the map.
      */
     @Override
     public String toString() {
         return this.mapVisualizer.draw(getCurrentBounds().lowerLeft(), getCurrentBounds().upperRight());
     }
 
-    // Getters for map properties.
-    public HashMap<Vector2d, List<Animal>> getAnimals() {
-        return this.animals;
-    }
+    // Getters
 
-    public HashMap<Vector2d, Plant> getPlants() {
-        return this.plants;
-    }
+    /**
+     * Gets a hash map of all animals on the map with the positions that they occupy.
+     *
+     * @return  A {@link HashMap} containing ({@link Vector2d}, {@link List}) pairs
+     *          representing a map position and a list of animals occupying the position.
+     */
+    public HashMap<Vector2d, List<Animal>> getAnimals() {return this.animals;}
 
-    public List<Vector2d> getFreePlantPositions() {
-        return this.freePlantPositions;
-    }
+    /**
+     * Gets a hash map of all plants on the map with the positions that they occupy.
+     *
+     * @return  A {@link HashMap} containing ({@link Vector2d}, {@link Plant}) pairs
+     *          representing a map position and a plant occupying the position.
+     */
+    public HashMap<Vector2d, Plant> getPlants() {return this.plants;}
 
-    public UUID getID() {
-        return this.id;
-    }
+    /**
+     * Gets a list of all positions on the map that are free for plants to grow on.
+     *
+     * @return  A {@link List} containing {@link Vector2d} objects representing the free positions.
+     */
+    public List<Vector2d> getFreePlantPositions() {return this.freePlantPositions;}
 
+    /**
+     * Gets the map's unique ID.
+     *
+     * @return  A {@link UUID} object.
+     */
+    public UUID getID() {return this.id;}
+
+    /**
+     * Gets the map's boundaries.
+     *
+     * @return  A {@link Boundary} object.
+     */
     public Boundary getCurrentBounds() {
         return new Boundary(new Vector2d(0, 0), new Vector2d(this.simulationProperties.getWidth() - 1, this.simulationProperties.getHeight() - 1));
     }

@@ -6,6 +6,8 @@ import proj.model.maps.AbstractWorldMap;
  * The MapChangeListener interface defines a callback for responding to changes in the map.
  * Implementing classes can use this to update their state or perform actions
  * whenever the map undergoes modifications.
+ *
+ * @author <a href="https://github.com/psarsky">psarsky</a>
  */
 public interface MapChangeListener {
     /**

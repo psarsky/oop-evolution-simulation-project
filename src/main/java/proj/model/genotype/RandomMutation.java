@@ -8,6 +8,8 @@ import java.util.Random;
  * Implementation of a mutation strategy where random genes in the array
  * are replaced with new random values.
  * The number of mutations is determined by the simulation properties.
+ *
+ * @author <a href="https://github.com/jakubkalinski0">jakubkalinski0</a>
  */
 public class RandomMutation implements Mutation {
     private static final Random random = new Random();
@@ -17,9 +19,9 @@ public class RandomMutation implements Mutation {
      * (within the range defined by the simulation properties) is modified. Each mutated
      * gene is replaced by a random value in the range [0, 7].
      *
-     * @param Genotype                      The array of genes to mutate
-     * @param simulationProperties          The properties of the simulation containing mutation configuration,
-     *                               including the minimum and maximum number of mutations allowed.
+     * @param Genotype             The array of genes to mutate.
+     * @param simulationProperties The properties of the simulation containing mutation configuration,
+     *                             including the minimum and maximum number of mutations allowed ({@link SimulationProperties}).
      */
     @Override
     public void applyMutation(int[] Genotype, SimulationProperties simulationProperties) {
