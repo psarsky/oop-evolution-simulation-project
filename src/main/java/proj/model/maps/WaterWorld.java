@@ -26,10 +26,12 @@ public class WaterWorld extends AbstractWorldMap {
      * Constructor for the {@code WaterWorld} map.
      * Initializes the map with water fields distributed randomly based on simulation properties.
      *
-     * @param simulationProperties A {@link SimulationProperties} object defining the map's dimensions and settings
+     * @param simulationProperties  A {@link SimulationProperties} object defining the simulation parameters.
+     * @param vegetation            An {@link AbstractVegetationVariant} object defining vegetation rules.
+     * @param movement              An {@link AbstractMovementVariant} object defining movement rules.
      */
-    public WaterWorld(SimulationProperties simulationProperties, AbstractVegetationVariant vegetationVariant, AbstractMovementVariant movement) {
-        super(simulationProperties, vegetationVariant, movement);
+    public WaterWorld(SimulationProperties simulationProperties, AbstractVegetationVariant vegetation, AbstractMovementVariant movement) {
+        super(simulationProperties, vegetation, movement);
         RandomPositionGenerator randomPositionGeneratorWater =
                 new RandomPositionGenerator(this.simulationProperties.getWidth(), this.simulationProperties.getHeight(), this.simulationProperties.getWidth() * this.simulationProperties.getHeight() / 10);
 
@@ -180,4 +182,12 @@ public class WaterWorld extends AbstractWorldMap {
         if (this.plants.containsKey(position)) return this.plants.get(position);
         return null;
     }
+
+    /**
+     * Gets a hash map with all water fields present on the map and their positions.
+     *
+     * @return  A {@link HashMap} containing ({@link Vector2d}, {@link Water}) pairs
+     *          representing map positions and water objects.
+     */
+    public HashMap<Vector2d, Water> getWaterFields() {return this.waterFields;}
 }
