@@ -30,8 +30,8 @@ public class Animal implements WorldElement {
     private final int energyToPassToChild;              // Energy passed to offspring during reproduction.
     private final int energyCostToMove;                 // Energy cost incurred by the animal during movement.
     private final int birthDate;                        // The day the animal was born.
-    private final int[] genes;                          // Genetic sequence defining the animal's behavior and traits.
     private PositionDirectionTuple positionDirection;   // Represents the animal's current position and direction on the map.
+    private int[] genes;                                // Genetic sequence defining the animal's behavior and traits.
     private int geneIndex;                              // Index of last used gene from the animal's genotype.
     private int energy;                                 // Current energy level of the animal.
     private int age;                                    // Current age of the animal in simulation days.
@@ -54,8 +54,8 @@ public class Animal implements WorldElement {
         this.energyToPassToChild = simulationProperties.getEnergyToPassToChild();
         this.energyCostToMove = simulationProperties.getEnergyCostToMove();
         this.birthDate = simulationProperties.getDaysElapsed();
-        this.genes = this.genotype.getGenes();
         this.positionDirection = new PositionDirectionTuple(position, MapDirection.getRandomDirection());
+        this.genes = this.genotype.getGenes();
         this.geneIndex = random.nextInt(simulationProperties.getGenotypeSize());
         this.energy = simulationProperties.getStartEnergy();
         this.age = 0;
@@ -153,18 +153,14 @@ public class Animal implements WorldElement {
      *
      * @return The animal's energy level.
      */
-    public int getEnergy() {
-        return this.energy;
-    }
+    public int getEnergy() {return this.energy;}
 
     /**
      * Gets the genes of the animal.
      *
      * @return The animal's gene array.
      */
-    public int[] getGenes() {
-        return this.genes;
-    }
+    public int[] getGenes() {return this.genes;}
 
     /**
      * Gets the index of the last used gene from the animal's gene array.
@@ -231,4 +227,25 @@ public class Animal implements WorldElement {
      * @param newGeneIndex The index of the last used gene.
      */
     public void setGeneIndex(int newGeneIndex) {this.geneIndex = newGeneIndex;}
+
+    /**
+     * Sets the animal's gene array (for testing purposes).
+     *
+     * @param genes The new gene array.
+     */
+    public void setGenes(int[] genes) {this.genes = genes;}
+
+    /**
+     * Sets the direction of the animal (for testing purposes).
+     *
+     * @param newDirection The new {@link MapDirection} to set.
+     */
+    public void setDir(MapDirection newDirection) {this.positionDirection = new PositionDirectionTuple(this.positionDirection.position(), newDirection);}
+
+    /**
+     * Sets the age of the animal (for testing purposes).
+     *
+     * @param age The new age to set.
+     */
+    public void setAge(int age) {this.age = age;}
 }

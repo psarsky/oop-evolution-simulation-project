@@ -170,4 +170,25 @@ public class Simulation implements Runnable {
      */
     @Override
     public String toString() {return map.toString();}
+
+    /**
+     * Gets the list of all alive animals in the simulation.
+     *
+     * @return A {@link List} of {@link Animal} objects.
+     */
+    public List<Animal> getAnimals() {return this.animals;}
+
+    /**
+     * Gets the list of all dead animals in the simulation.
+     *
+     * @return A {@link List} of {@link Animal} objects.
+     */
+    public List<Animal> getDeadAnimals() {return this.deadAnimals;}
+
+    /**
+     * Gets the current state of the simulation.
+     *
+     * @return  {@code true} if the simulation is running, {@code false} if otherwise.
+     */
+    public boolean isRunning() {return this.running;}
 }
