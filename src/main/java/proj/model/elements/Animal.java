@@ -146,7 +146,7 @@ public class Animal implements WorldElement {
      *
      * @return The animal's current direction as a {@link MapDirection} object.
      */
-    public MapDirection getDir() {return this.positionDirection.direction();}
+    public MapDirection getDirection() {return this.positionDirection.direction();}
 
     /**
      * Gets the current energy level of the animal.
