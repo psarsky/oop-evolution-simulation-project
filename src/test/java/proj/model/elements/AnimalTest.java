@@ -36,7 +36,7 @@ class AnimalTest {
         PositionDirectionTuple newPosDir = new PositionDirectionTuple(new Vector2d(2, 1), MapDirection.EAST);
         animal.move(newPosDir);
         assertEquals(animal.getPos(), new Vector2d(2, 1));
-        assertEquals(animal.getDir(), MapDirection.EAST);
+        assertEquals(animal.getDirection(), MapDirection.EAST);
     }
 
     @Test
