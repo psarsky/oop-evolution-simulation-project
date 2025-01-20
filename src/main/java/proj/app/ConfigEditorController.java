@@ -21,6 +21,18 @@ public class ConfigEditorController {
     @FXML private Spinner<Integer> heightSpinner;
     @FXML private Spinner<Integer> animalCountSpinner;
     @FXML private Spinner<Integer> startEnergySpinner;
+    @FXML private Spinner<Integer> genotypeSizeSpinner;
+    @FXML private Spinner<Integer> equatorHeightSpinner;
+    @FXML private Spinner<Integer> plantCountSpinner;
+    @FXML private Spinner<Integer> plantsPerDaySpinner;
+    @FXML private Spinner<Integer> plantEnergySpinner;
+    @FXML private Spinner<Integer> energyNeededToReproduceSpinner;
+    @FXML private Spinner<Integer> energyToPassToChildSpinner;
+    @FXML private Spinner<Integer> energyCostToMoveSpinner;
+    @FXML private Spinner<Integer> simulationStepSpinner;
+    @FXML private Spinner<Integer> minimumNumberOfMutationsSpinner;
+    @FXML private Spinner<Integer> maximumNumberOfMutationsSpinner;
+    @FXML private Spinner<Integer> waterViolenceSpinner;
     @FXML private CheckBox saveStatistics;
 
     private Runnable onConfigSaved;
@@ -36,9 +48,21 @@ public class ConfigEditorController {
 
         // Initialize Spinners
         widthSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(10, 200, 50));
-        heightSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(10, 200, 30));
-        animalCountSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1000, 20));
-        startEnergySpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 10));
+        heightSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(10, 200, 50));
+        animalCountSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1000, 50));
+        startEnergySpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 20));
+        genotypeSizeSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 50));
+        equatorHeightSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 50, 4));
+        plantCountSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1000, 100));
+        plantsPerDaySpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 10));
+        plantEnergySpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 10));
+        energyNeededToReproduceSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 10));
+        energyToPassToChildSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 5));
+        energyCostToMoveSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 1));
+        simulationStepSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 400, 100));
+        minimumNumberOfMutationsSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 100, 10));
+        maximumNumberOfMutationsSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 100, 50));
+        waterViolenceSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 50));
 
         // Set default values
         mapVariant.setValue(MapVariant.GLOBE);
@@ -56,26 +80,26 @@ public class ConfigEditorController {
         String configName = configNameField.getText();
         SimulationProperties config = new SimulationProperties(
                 configName,
-                100, // genotypeSize
+                genotypeSizeSpinner.getValue(),
                 movementVariant.getValue(),
                 mutationVariant.getValue(),
                 mapVariant.getValue(),
                 vegetationVariant.getValue(),
                 widthSpinner.getValue(),
                 heightSpinner.getValue(),
-                4,  // equatorHeight
+                equatorHeightSpinner.getValue(),
                 animalCountSpinner.getValue(),
-                100, // plantCount
-                10,  // plantsPerDay
+                plantCountSpinner.getValue(),
+                plantsPerDaySpinner.getValue(),
                 startEnergySpinner.getValue(),
-                5,   // plantEnergy
-                10,  // energyNeededToReproduce
-                5,   // energyToPassToChild
-                1,   // energyCostToMove
-                100, // simulationStep
-                0,   // minimumNumberOfMutations
-                0,   // maximumNumberOfMutations
-                50,  // waterViolence
+                plantEnergySpinner.getValue(),
+                energyNeededToReproduceSpinner.getValue(),
+                energyToPassToChildSpinner.getValue(),
+                energyCostToMoveSpinner.getValue(),
+                simulationStepSpinner.getValue(),
+                minimumNumberOfMutationsSpinner.getValue(),
+                maximumNumberOfMutationsSpinner.getValue(),
+                waterViolenceSpinner.getValue(),
                 saveStatistics.isSelected()
         );
 
