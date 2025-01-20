@@ -70,6 +70,32 @@ public class MainWindowController {
     }
 
     @FXML
+    private void handleDeleteConfig() {
+        String selectedConfig = configSelect.getSelectionModel().getSelectedItem();
+        if (selectedConfig == null) {
+            showError("Delete Configuration", "Please select a configuration to delete.");
+            return;
+        }
+
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmation.setTitle("Delete Configuration");
+        confirmation.setHeaderText("Are you sure you want to delete the selected configuration?");
+        confirmation.setContentText("This action cannot be undone.");
+
+        Optional<ButtonType> result = confirmation.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            try {
+                ConfigManager.deleteConfig(selectedConfig);
+                loadAvailableConfigs();
+                startSimulationButton.setDisable(true);
+                currentConfig = null;
+            } catch (IOException e) {
+                showError("Error Deleting Configuration", e.getMessage());
+            }
+        }
+    }
+
+    @FXML
     private void handleStartSimulation() {
         if (currentConfig == null) {
             showError("Configuration Error", "Please select a configuration first.");
@@ -126,6 +152,8 @@ public class MainWindowController {
         try {
             configSelect.getItems().clear();
             configSelect.getItems().addAll(ConfigManager.getAvailableConfigs());
+            configSelect.getSelectionModel().clearSelection();
+            startSimulationButton.setDisable(true);
         } catch (IOException e) {
             showError("Error loading configurations", e.getMessage());
         }

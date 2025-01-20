@@ -14,7 +14,9 @@
         <HBox spacing="10" alignment="CENTER">
             <ComboBox fx:id="configSelect" prefWidth="200"/>
             <Button fx:id="newConfigButton" text="New Configuration" onAction="#handleNewConfig"/>
+            <Button fx:id="deleteConfigButton" text="Delete Configuration" onAction="#handleDeleteConfig"/>
         </HBox>
+
     </VBox>
 
     <Button fx:id="startSimulationButton" text="Start Simulation"
