@@ -7,7 +7,6 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
-//import proj.app.SimulationConfig;
 import proj.model.elements.Animal;
 import proj.model.elements.Plant;
 import proj.model.elements.Water;
@@ -21,11 +20,14 @@ import proj.model.movement.OldAgeAintNoPicnic;
 import proj.model.movement.PredestinedMovement;
 import proj.model.vegetation.AbstractVegetationVariant;
 import proj.model.vegetation.ForestedEquator;
-import proj.presenter.ConsoleMapDisplay;
+//import proj.presenter.ConsoleMapDisplay;
 import proj.simulation.Simulation;
 import proj.app.StatisticsManager;
 import proj.simulation.SimulationProperties;
 import proj.util.Vector2d;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class SimulationWindowController {
     @FXML private Canvas simulationCanvas;
@@ -39,6 +41,16 @@ public class SimulationWindowController {
     @FXML private Label selectedAnimalAge;
     @FXML private Label selectedAnimalChildren;
     @FXML private Label selectedAnimalPlantsEaten;
+    @FXML private Label emptyFieldsCount;
+    @FXML private TextArea popularGenotypes;
+    @FXML private Label averageEnergy;
+    @FXML private Label averageLifespan;
+    @FXML private Label averageChildren;
+    @FXML private Label selectedAnimalGenotype;
+    @FXML private Label selectedAnimalActiveGene;
+    @FXML private Label selectedAnimalDescendants;
+    @FXML private Label selectedAnimalDeathDate;
+
 
     private Simulation simulation;
     private SimulationProperties simProps;
@@ -48,6 +60,15 @@ public class SimulationWindowController {
     private Thread simulationThread;
     private double cellWidth;
     private double cellHeight;
+
+    // Colors for top genotypes
+    private static final Color TOP_GENOTYPE_COLOR = Color.MAGENTA;
+    private static final Color SECOND_GENOTYPE_COLOR = Color.BLACK;
+    private static final Color THIRD_GENOTYPE_COLOR = Color.BLUE;
+    private static final double GENOTYPE_BORDER_WIDTH = 2.0;
+
+    // Store current top genotypes for coloring
+    private List<String> topGenotypeStrings = new ArrayList<>();
 
     public void initializeSimulation(SimulationProperties config) {
         System.out.println("Initializing simulation with config: " + config.getConfigName());
@@ -88,8 +109,8 @@ public class SimulationWindowController {
             case GLOBE -> new Globe(simulationProperties, vegetation, movement);
             case WATER_WORLD -> new WaterWorld(simulationProperties, vegetation, movement);
         };
-        ConsoleMapDisplay observer = new ConsoleMapDisplay();
-        map.addObserver(observer);
+//        ConsoleMapDisplay observer = new ConsoleMapDisplay();
+//        map.addObserver(observer);
         return new Simulation(map, simulationProperties, mutation);
     }
 
@@ -202,9 +223,28 @@ public class SimulationWindowController {
             gc.strokeLine(0, y * cellHeight, simulationCanvas.getWidth(), y * cellHeight);
         }
 
+        // Highlight preferred fields (equator) in gray
+        int equatorHeight = simProps.getEquatorHeight(); // Pobierz wysokość równika z konfiguracji
+        int mapHeight = simProps.getHeight();
+
+        int equatorStartY = (mapHeight - equatorHeight) / 2;
+        int equatorEndY = equatorStartY + equatorHeight;
+
+        gc.setFill(Color.LIGHTGRAY);
+        for (int y = equatorStartY; y < equatorEndY; y++) {
+            for (int x = 0; x < simProps.getWidth(); x++) {
+                gc.fillRect(
+                        x * cellWidth,
+                        y * cellHeight,
+                        cellWidth,
+                        cellHeight
+                );
+            }
+        }
+
         // Draw water (if WaterWorld)
         if (map instanceof WaterWorld) {
-            gc.setFill(Color.LIGHTBLUE.deriveColor(0, 1, 1, 0.5)); // Semi-transparent water
+            gc.setFill(Color.LIGHTBLUE.deriveColor(0, 1, 1, 0.5));
             ((WaterWorld) map).getWaterFields().forEach((pos, water) -> {
                 drawCell(gc, pos.x(), pos.y(), true);
             });
@@ -228,30 +268,60 @@ public class SimulationWindowController {
         map.getAnimals().forEach((pos, animals) -> {
             if (!animals.isEmpty()) {
                 Animal animal = animals.get(0);
-                // Calculate color based on energy
-                double energyRatio = Math.min(1.0, animal.getEnergy() / (double)simProps.getStartEnergy());
-                Color animalColor = Color.rgb(
-                        (int)(255 * (1 - energyRatio)),  // More red when low energy
-                        (int)(255 * energyRatio),        // More green when high energy
-                        0
-                );
 
-                gc.setFill(animalColor);
+                // Draw animal with energy-based color
+                gc.setFill(getAnimalEnergyColor(animal));
                 drawCell(gc, pos.x(), pos.y(), false);
+
+                // Draw genotype border if it's one of the top genotypes
+                Color borderColor = getGenotypeBorderColor(animal);
+                if (borderColor != null) {
+                    gc.setStroke(borderColor);
+                    gc.setLineWidth(GENOTYPE_BORDER_WIDTH);
+                    gc.strokeRect(
+                            pos.x() * cellWidth + GENOTYPE_BORDER_WIDTH / 2,
+                            pos.y() * cellHeight + GENOTYPE_BORDER_WIDTH / 2,
+                            cellWidth - GENOTYPE_BORDER_WIDTH,
+                            cellHeight - GENOTYPE_BORDER_WIDTH
+                    );
+                }
 
                 // Highlight selected animal
                 if (animal == selectedAnimal) {
                     gc.setStroke(Color.YELLOW);
-                    gc.setLineWidth(2);
+                    gc.setLineWidth(3);
                     gc.strokeRect(
-                            pos.x() * cellWidth + 1,
-                            pos.y() * cellHeight + 1,
-                            cellWidth - 2,
-                            cellHeight - 2
+                            pos.x() * cellWidth + 3 / 2,
+                            pos.y() * cellHeight + 3 / 2,
+                            cellWidth - 3,
+                            cellHeight - 3
                     );
                 }
             }
         });
+    }
+
+
+    private Color getAnimalEnergyColor(Animal animal) {
+        double energyRatio = Math.min(1.0, animal.getEnergy() / (double)simProps.getStartEnergy());
+        return Color.rgb(
+                (int)(255 * (1 - energyRatio)),  // More red when low energy
+                (int)(255 * energyRatio),        // More green when high energy
+                0
+        );
+    }
+
+    private Color getGenotypeBorderColor(Animal animal) {
+        String animalGenotype = geneSequenceToString(animal.getGenes());
+
+        if (!topGenotypeStrings.isEmpty() && animalGenotype.equals(topGenotypeStrings.get(0))) {
+            return TOP_GENOTYPE_COLOR;
+        } else if (topGenotypeStrings.size() > 1 && animalGenotype.equals(topGenotypeStrings.get(1))) {
+            return SECOND_GENOTYPE_COLOR;
+        } else if (topGenotypeStrings.size() > 2 && animalGenotype.equals(topGenotypeStrings.get(2))) {
+            return THIRD_GENOTYPE_COLOR;
+        }
+        return null;
     }
 
     private void drawCell(GraphicsContext gc, int x, int y, boolean fill) {
@@ -272,11 +342,126 @@ public class SimulationWindowController {
         }
     }
 
-    private void updateStatistics() {
-        dayCount.setText(String.valueOf(simProps.getDaysElapsed()));
-        animalCount.setText(String.valueOf(simulation.getAnimals().size()));
-        plantCount.setText(String.valueOf(simulation.getMap().getPlants().size()));
+    // Helper method to convert gene sequence to readable direction names
+    private String geneSequenceToString(int[] genes) {
+        StringBuilder sb = new StringBuilder();
+        for (int gene : genes) {
+            switch (gene) {
+                case 0 -> sb.append("N");
+                case 1 -> sb.append("NE");
+                case 2 -> sb.append("E");
+                case 3 -> sb.append("SE");
+                case 4 -> sb.append("S");
+                case 5 -> sb.append("SW");
+                case 6 -> sb.append("W");
+                case 7 -> sb.append("NW");
+            }
+            sb.append(" ");
+        }
+        return sb.toString().trim();
+    }
 
+    private void updateStatistics() {
+        AbstractWorldMap map = simulation.getMap();
+        List<Animal> animals = simulation.getAnimals();
+
+        // Update existing statistics
+        dayCount.setText(String.valueOf(simProps.getDaysElapsed()));
+        animalCount.setText(String.valueOf(animals.size()));
+        plantCount.setText(String.valueOf(map.getPlants().size()));
+
+        // Calculate and update empty fields
+        int totalFields = simProps.getWidth() * simProps.getHeight();
+        Set<Vector2d> occupiedPositions = new HashSet<>();
+
+// Dodaj pozycje zwierząt
+        map.getAnimals().forEach((position, animal) -> {
+            if (animal != null && !animal.isEmpty()) {
+                occupiedPositions.add(position);
+            }
+        });
+
+// Dodaj pozycje roślin
+        map.getPlants().forEach((position, plant) -> {
+            if (plant != null) {
+                occupiedPositions.add(position);
+            }
+        });
+
+// Dodaj pozycje pól wody (jeśli mapa to WaterWorld)
+        if (map instanceof WaterWorld) {
+            ((WaterWorld) map).getWaterFields().forEach((position, water) -> {
+                occupiedPositions.add(position);
+            });
+        }
+
+// Oblicz zajęte i wolne pola
+        int occupiedFields = occupiedPositions.size();
+        int emptyFields = Math.max(0, totalFields - occupiedFields); // Zabezpieczenie przed ujemnymi wartościami
+        emptyFieldsCount.setText(String.valueOf(emptyFields));
+
+
+
+
+        // Update genotype statistics and store top genotypes for coloring
+        Map<String, Long> genotypeCounts = animals.stream()
+                .map(animal -> geneSequenceToString(animal.getGenes()))
+                .collect(Collectors.groupingBy(
+                        genotype -> genotype,
+                        Collectors.counting()
+                ));
+
+        // Clear previous top genotypes
+        topGenotypeStrings.clear();
+
+        StringBuilder genotypeText = new StringBuilder();
+        genotypeText.append("Top 3 genotypes (and their colors):\n\n");
+
+        genotypeCounts.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .limit(3)
+                .forEach(entry -> {
+                    double percentage = (entry.getValue() * 100.0) / animals.size();
+                    String genotypeStr = entry.getKey();
+                    topGenotypeStrings.add(genotypeStr);
+
+                    String color = topGenotypeStrings.indexOf(genotypeStr) == 0 ? "Magenta" :
+                            topGenotypeStrings.indexOf(genotypeStr) == 1 ? "Black" : "Blue";
+
+                    genotypeText.append(String.format("%s (%s)\n%d animals (%.1f%%)\n\n",
+                            genotypeStr,
+                            color,
+                            entry.getValue(),
+                            percentage));
+                });
+
+        popularGenotypes.setText(animals.isEmpty() ? "No animals present" : genotypeText.toString());
+
+        // Calculate average energy for living animals
+        double avgEnergy = animals.stream()
+                .mapToInt(Animal::getEnergy)
+                .average()
+                .orElse(0.0);
+        averageEnergy.setText(String.format("%.2f", avgEnergy));
+
+        // Calculate average lifespan for dead animals
+        List<Animal> deadAnimals = simulation.getDeadAnimals();
+        double avgLifespan = deadAnimals.isEmpty() ? 0.0 :
+                deadAnimals.stream()
+                        .filter(animal -> animal.getDeathDate() != -1)
+                        .mapToInt(animal -> animal.getDeathDate() - animal.getBirthDate())
+                        .average()
+                        .orElse(0.0);
+        averageLifespan.setText(String.format("%.2f days", avgLifespan));
+
+        // Calculate average number of children for living animals
+        double avgChildren = animals.stream()
+                .mapToInt(Animal::getChildrenMade)
+                .average()
+                .orElse(0.0);
+        averageChildren.setText(String.format("%.2f", avgChildren));
+
+        // Update selected animal statistics if present
         if (selectedAnimal != null && selectedAnimal.getEnergy() > 0) {
             updateSelectedAnimalStats();
         } else {
@@ -290,13 +475,34 @@ public class SimulationWindowController {
         selectedAnimalAge.setText(String.valueOf(selectedAnimal.getAge()));
         selectedAnimalChildren.setText(String.valueOf(selectedAnimal.getChildrenMade()));
         selectedAnimalPlantsEaten.setText(String.valueOf(selectedAnimal.getPlantsEaten()));
+
+        // Ustawienie genotypu
+        selectedAnimalGenotype.setText(geneSequenceToString(selectedAnimal.getGenes()));
+
+        // Aktywna część genomu
+        selectedAnimalActiveGene.setText(String.valueOf(selectedAnimal.getActiveGeneIndex()));
+
+        // Liczba potomków
+        selectedAnimalDescendants.setText(String.valueOf(selectedAnimal.getDescendantsCount()));
+
+        // Dzień śmierci (jeśli zwierzę nie żyje)
+        if (selectedAnimal.isAlive()) {
+            selectedAnimalDeathDate.setText("-");
+        } else {
+            selectedAnimalDeathDate.setText(String.valueOf(selectedAnimal.getDeathDate()));
+        }
     }
+
 
     private void clearSelectedAnimalStats() {
         selectedAnimalEnergy.setText("-");
         selectedAnimalAge.setText("-");
         selectedAnimalChildren.setText("-");
+        selectedAnimalGenotype.setText("-");
         selectedAnimalPlantsEaten.setText("-");
+        selectedAnimalActiveGene.setText("-");
+        selectedAnimalDescendants.setText("-");
+        selectedAnimalDeathDate.setText("-");
     }
 
     @FXML
