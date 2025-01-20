@@ -230,7 +230,7 @@ public class SimulationWindowController {
         int equatorStartY = (mapHeight - equatorHeight) / 2;
         int equatorEndY = equatorStartY + equatorHeight;
 
-        gc.setFill(Color.LIGHTGRAY);
+        gc.setFill(Color.LIGHTGREEN);
         for (int y = equatorStartY; y < equatorEndY; y++) {
             for (int x = 0; x < simProps.getWidth(); x++) {
                 gc.fillRect(
