@@ -69,7 +69,7 @@ public abstract class AbstractWorldMap implements MoveValidator {
      * @param position  A {@link Vector2d} object defining the position to place the animal.
      * @param animal    An {@link Animal} object to place.
      */
-    public void placeAnimal(Vector2d position, Animal animal) {
+    public synchronized void placeAnimal(Vector2d position, Animal animal) {
         if (this.animals.containsKey(position)) {
             this.animals.get(position).add(animal);
         } else {
@@ -85,7 +85,7 @@ public abstract class AbstractWorldMap implements MoveValidator {
      *
      * @param animal An {@link Animal} object to remove.
      */
-    public void removeAnimal(Animal animal) {
+    public synchronized void removeAnimal(Animal animal) {
         this.animals.get(animal.getPos()).remove(animal);
         notifyObservers("Animal died at " + animal.getPos() + ".");
     }
@@ -96,7 +96,7 @@ public abstract class AbstractWorldMap implements MoveValidator {
      *
      * @param animal An {@link Animal} object to move.
      */
-    public void move(Animal animal) {
+    public synchronized void move(Animal animal) {
         Vector2d oldPos = animal.getPos();
         this.animals.get(animal.getPos()).remove(animal);
         this.movement.move(animal, this);
@@ -111,7 +111,7 @@ public abstract class AbstractWorldMap implements MoveValidator {
      * @param position  A {@link Vector2d} object defining the position to place the plant.
      * @param plant     A {@link Plant} object to place.
      */
-    public void placePlant(Vector2d position, Plant plant) {
+    public synchronized void placePlant(Vector2d position, Plant plant) {
         this.plants.put(position, plant);
         this.freePlantPositions.remove(position);
     }
@@ -134,7 +134,7 @@ public abstract class AbstractWorldMap implements MoveValidator {
     /**
      * Updates all inanimate elements on the map (only {@link Plant} objects by default).
      */
-    public void updateWorldElements() {
+    public synchronized void updateWorldElements() {
         for (int i = 0; i < this.simulationProperties.getPlantsPerDay(); i++) {
             spawnPlant();
         }
@@ -147,7 +147,7 @@ public abstract class AbstractWorldMap implements MoveValidator {
      * @param position  A {@link Vector2d} object defining the position to check.
      * @return          The {@link WorldElement} object at the position, or null if none exists.
      */
-    public WorldElement objectAt(Vector2d position) {
+    public synchronized WorldElement objectAt(Vector2d position) {
         if (this.animals.containsKey(position)) {
             if (!this.animals.get(position).isEmpty())
                 return this.animals.get(position).getFirst();
