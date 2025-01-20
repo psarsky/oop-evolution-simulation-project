@@ -19,7 +19,7 @@
     </top>
 
     <center>
-        <SplitPane>
+        <SplitPane dividerPositions="0.8">
             <!-- Changed the ScrollPane and Canvas setup -->
             <AnchorPane>
                 <ScrollPane AnchorPane.topAnchor="0.0"
@@ -55,7 +55,7 @@
                                   maxHeight="260"
                                   maxWidth="900"
                                   GridPane.columnIndex="0"
-                                  GridPane.columnSpan="50"
+                                  GridPane.columnSpan="10"
                                   GridPane.rowIndex="5"/>
 
                         <Label text="Average Energy:" GridPane.columnIndex="0" GridPane.rowIndex="6"/>

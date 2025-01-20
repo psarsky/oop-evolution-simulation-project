@@ -49,8 +49,8 @@ public class Simulation implements Runnable {
         this.running = true;
 
         RandomPositionGenerator randomPositionGenerator = new RandomPositionGenerator(this.simulationProperties.getWidth(), this.simulationProperties.getHeight(), this.simulationProperties.getAnimalCount());
-        Genotype genotype = new Genotype(simulationProperties, mutation);
         for(Vector2d animalPosition : randomPositionGenerator) {
+            Genotype genotype = new Genotype(simulationProperties, mutation);
             Animal animal = new Animal(animalPosition, this.simulationProperties, genotype);
             this.animals.add(animal);
             this.map.placeAnimal(animal.getPos(), animal);
