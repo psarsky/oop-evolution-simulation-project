@@ -191,4 +191,6 @@ public class Simulation implements Runnable {
      * @return  {@code true} if the simulation is running, {@code false} if otherwise.
      */
     public boolean isRunning() {return this.running;}
+
+    public AbstractWorldMap getMap() {return this.map;}
 }
