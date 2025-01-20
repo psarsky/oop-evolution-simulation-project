@@ -1,4 +1,3 @@
-// ConfigManager.java
 package proj.app;
 
 import com.google.gson.Gson;
@@ -7,7 +6,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import proj.app.SimulationConfig;
+import proj.simulation.SimulationProperties;
 
 import java.io.*;
 import java.nio.file.*;
@@ -18,7 +17,7 @@ public class ConfigManager {
     private static final String CONFIG_DIRECTORY = "configs";
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-    public static void saveConfig(SimulationConfig config) throws IOException {
+    public static void saveConfig(SimulationProperties config) throws IOException {
         Files.createDirectories(Paths.get(CONFIG_DIRECTORY));
         String fileName = CONFIG_DIRECTORY + "/" + config.getConfigName() + ".json";
 
@@ -27,10 +26,10 @@ public class ConfigManager {
         }
     }
 
-    public static SimulationConfig loadConfig(String configName) throws IOException {
+    public static SimulationProperties loadConfig(String configName) throws IOException {
         String fileName = CONFIG_DIRECTORY + "/" + configName + ".json";
         try (Reader reader = new FileReader(fileName)) {
-            return gson.fromJson(reader, SimulationConfig.class);
+            return gson.fromJson(reader, SimulationProperties.class);
         }
     }
 

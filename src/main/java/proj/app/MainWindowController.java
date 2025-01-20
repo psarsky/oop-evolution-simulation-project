@@ -7,6 +7,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 import proj.app.SimulationWindowController;
+import proj.simulation.SimulationProperties;
+
 import java.io.IOException;
 import java.util.Optional;
 
@@ -16,7 +18,8 @@ public class MainWindowController {
     @FXML private Button startSimulationButton;
     @FXML private ListView<String> recentSimulations;
 
-    private SimulationConfig currentConfig;
+    private SimulationProperties currentConfig;
+
 
     @FXML
     public void initialize() {
