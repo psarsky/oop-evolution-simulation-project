@@ -14,7 +14,7 @@ import proj.model.movement.PredestinedMovement;
 import proj.model.vegetation.AbstractVegetationVariant;
 import proj.model.vegetation.ForestedEquator;
 import proj.model.vegetation.VegetationVariant;
-import proj.presenter.ConsoleMapDisplay;
+//import proj.presenter.ConsoleMapDisplay;
 import proj.simulation.Simulation;
 import proj.simulation.SimulationProperties;
 
@@ -69,8 +69,8 @@ public class World {
             case GLOBE -> new Globe(simulationProperties, vegetation, movement);
             case WATER_WORLD -> new WaterWorld(simulationProperties, vegetation, movement);
         };
-        ConsoleMapDisplay observer = new ConsoleMapDisplay();
-        map.addObserver(observer);
+//        ConsoleMapDisplay observer = new ConsoleMapDisplay();
+//        map.addObserver(observer);
         return new Simulation(map, simulationProperties, mutation);
     }
 }

@@ -59,7 +59,7 @@ public class ConfigEditorController {
         energyNeededToReproduceSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 10));
         energyToPassToChildSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 5));
         energyCostToMoveSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 1));
-        simulationStepSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 400, 100));
+        simulationStepSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(50, 400, 100));
         minimumNumberOfMutationsSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 100, 10));
         maximumNumberOfMutationsSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 100, 50));
         waterViolenceSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 50));
