@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<ScrollPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="proj.app.ConfigEditorController" fitToWidth="true">
+    <VBox spacing="10" style="-fx-padding: 20;">
+        <Label text="Configuration Editor" style="-fx-font-size: 20;"/>
+
+        <GridPane vgap="10" hgap="10">
+            <padding><Insets top="10" bottom="10"/></padding>
+
+            <!-- Basic Settings -->
+            <Label text="Configuration Name:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <TextField fx:id="configNameField" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+            <!-- Map Settings -->
+            <Label text="Map Settings" style="-fx-font-weight: bold;"
+                   GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="2"/>
+
+            <Label text="Map Type:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+            <ComboBox fx:id="mapVariant" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+            <Label text="Width:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+            <Spinner fx:id="widthSpinner" editable="true"
+                     GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+
+            <Label text="Height:" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+            <Spinner fx:id="heightSpinner" editable="true"
+                     GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+
+            <!-- Simulation Settings -->
+            <Label text="Simulation Settings" style="-fx-font-weight: bold;"
+                   GridPane.columnIndex="0" GridPane.rowIndex="5" GridPane.columnSpan="2"/>
+
+            <Label text="Movement Type:" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
+            <ComboBox fx:id="movementVariant" GridPane.columnIndex="1" GridPane.rowIndex="6"/>
+
+            <Label text="Mutation Type:" GridPane.columnIndex="0" GridPane.rowIndex="7"/>
+            <ComboBox fx:id="mutationVariant" GridPane.columnIndex="1" GridPane.rowIndex="7"/>
+
+            <Label text="Vegetation Type:" GridPane.columnIndex="0" GridPane.rowIndex="8"/>
+            <ComboBox fx:id="vegetationVariant" GridPane.columnIndex="1" GridPane.rowIndex="8"/>
+
+            <!-- Animal Settings -->
+            <Label text="Animal Settings" style="-fx-font-weight: bold;"
+                   GridPane.columnIndex="0" GridPane.rowIndex="9" GridPane.columnSpan="2"/>
+
+            <Label text="Initial Animal Count:" GridPane.columnIndex="0" GridPane.rowIndex="10"/>
+            <Spinner fx:id="animalCountSpinner" editable="true"
+                     GridPane.columnIndex="1" GridPane.rowIndex="10"/>
+
+            <Label text="Start Energy:" GridPane.columnIndex="0" GridPane.rowIndex="11"/>
+            <Spinner fx:id="startEnergySpinner" editable="true"
+                     GridPane.columnIndex="1" GridPane.rowIndex="11"/>
+
+            <!-- Additional settings... -->
+
+            <CheckBox fx:id="saveStatistics" text="Save Statistics"
+                      GridPane.columnIndex="0" GridPane.rowIndex="20" GridPane.columnSpan="2"/>
+        </GridPane>
+
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <Button text="Cancel" onAction="#handleCancel"/>
+            <Button text="Save" onAction="#handleSave" defaultButton="true"/>
+        </HBox>
+    </VBox>
+</ScrollPane>
