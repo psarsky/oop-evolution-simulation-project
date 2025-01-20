@@ -33,6 +33,16 @@ public class ConfigManager {
         }
     }
 
+    public static void deleteConfig(String configName) throws IOException {
+        String fileName = CONFIG_DIRECTORY + "/" + configName + ".json";
+        Path path = Paths.get(fileName);
+        if (Files.exists(path)) {
+            Files.delete(path);
+        } else {
+            throw new FileNotFoundException("Configuration not found: " + configName);
+        }
+    }
+
     public static List<String> getAvailableConfigs() throws IOException {
         List<String> configs = new ArrayList<>();
         Path configDir = Paths.get(CONFIG_DIRECTORY);
