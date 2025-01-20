@@ -22,6 +22,7 @@ public class World {
     public static void main(String[] args) {
         System.out.println("START");
         SimulationProperties simulationProperties = new SimulationProperties(
+                "console_config",
                 100,    // gene count
                 MovementVariant.PREDESTINED,
                 MutationVariant.RANDOM,
@@ -41,7 +42,8 @@ public class World {
                 100,    // simulation step
                 0,      // min mutation
                 0,      // max mutation
-                50      // water violence
+                50,      // water violence
+                false
         );
         Simulation simulation = getSimulation(simulationProperties);
         simulation.run();

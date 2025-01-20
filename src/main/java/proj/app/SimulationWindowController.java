@@ -7,7 +7,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
-import proj.app.SimulationConfig;
+//import proj.app.SimulationConfig;
 import proj.model.elements.Animal;
 import proj.model.elements.Plant;
 import proj.model.elements.Water;
@@ -49,9 +49,9 @@ public class SimulationWindowController {
     private double cellWidth;
     private double cellHeight;
 
-    public void initializeSimulation(SimulationConfig config) {
+    public void initializeSimulation(SimulationProperties config) {
         System.out.println("Initializing simulation with config: " + config.getConfigName());
-        simProps = config.toSimulationProperties();
+        simProps = config;
         simulation = getSimulation(simProps);
         statisticsManager = new StatisticsManager(simulation, simProps);
 
@@ -189,7 +189,7 @@ public class SimulationWindowController {
         AbstractWorldMap map = simulation.getMap();
 
         // Draw grid
-        gc.setStroke(Color.LIGHTGRAY);
+        gc.setStroke(Color.GRAY);
         gc.setLineWidth(0.5);
 
         // Draw vertical grid lines

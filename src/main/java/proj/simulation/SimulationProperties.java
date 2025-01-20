@@ -18,10 +18,11 @@ import proj.model.vegetation.VegetationVariant;
  * @author <a href="https://github.com/psarsky">psarsky</a>, <a href="https://github.com/jakubkalinski0">jakubkalinski0</a>
  */
 public class SimulationProperties {
-    private static int genotypeSize;                    // Size of the genotype array for animals
+    private final String configName;                    // Name of the given configuration
+    private final int genotypeSize;                     // Size of the genotype array for animals
     private final MovementVariant movementVariant;      // Variant of movement logic for animals
     private final MutationVariant mutationVariant;      // Variant of mutation logic
-    private final MapVariant mapVariant;                // Type of map (e.g., bounded, unbounded)
+    private final MapVariant mapVariant;                // Type of map (e.g., Globe, WaterWorld)
     private final VegetationVariant vegetationVariant;  // Variant of vegetation growth
     private final int width;                            // Width of the simulation map
     private final int height;                           // Height of the simulation map
@@ -38,11 +39,13 @@ public class SimulationProperties {
     private final int minimumNumberOfMutations;         // Minimum number of mutations for a child genotype
     private final int maximumNumberOfMutations;         // Maximum number of mutations for a child genotype
     private final int waterViolence;                    // Percentage value determining the aggression of water flow
+    private final boolean saveStatisticsFlag;           // Boolean value defining if statistics of the simulation should be saved or not
     private int daysElapsed;                            // Counter for the number of days passed in the simulation
 
     /**
      * Constructs a new {@code SimulationProperties} object and initializes all given properties.
      *
+     * @param configName                Name of the configuration.
      * @param genotypeSize              Size of the genotype array for animals.
      * @param movementVariant           {@link MovementVariant} utilized in the simulation.
      * @param mutationVariant           {@link MutationVariant} utilized in the simulation.
@@ -62,8 +65,11 @@ public class SimulationProperties {
      * @param simulationStep            Simulation step interval in milliseconds.
      * @param minimumNumberOfMutations  Minimum number of mutations for a child genotype.
      * @param maximumNumberOfMutations  Maximum number of mutations for a child genotype.
+     * @param waterViolence             Value determining the aggression of water flow.
+     * @param saveStatisticsFlag        Boolean value defining if statistics of the simulation should be saved or not
      */
-    public SimulationProperties(int genotypeSize,
+    public SimulationProperties(String configName,
+                                int genotypeSize,
                                 MovementVariant movementVariant,
                                 MutationVariant mutationVariant,
                                 MapVariant mapVariant,
@@ -82,8 +88,10 @@ public class SimulationProperties {
                                 int simulationStep,
                                 int minimumNumberOfMutations,
                                 int maximumNumberOfMutations,
-                                int waterViolence) {
-        SimulationProperties.genotypeSize = genotypeSize;
+                                int waterViolence,
+                                boolean saveStatisticsFlag) {
+        this.configName = configName;
+        this.genotypeSize = genotypeSize;
         this.movementVariant = movementVariant;
         this.mutationVariant = mutationVariant;
         this.mapVariant = mapVariant;
@@ -103,6 +111,7 @@ public class SimulationProperties {
         this.minimumNumberOfMutations = minimumNumberOfMutations;
         this.maximumNumberOfMutations = maximumNumberOfMutations;
         this.waterViolence = waterViolence;
+        this.saveStatisticsFlag = saveStatisticsFlag;
         this.daysElapsed = 0;
     }
 
@@ -113,7 +122,14 @@ public class SimulationProperties {
 
     
     // Getters
-    
+
+    /**
+     * Gets the name of the configuration.
+     *
+     * @return The configuration name.
+     */
+    public String getConfigName() {return this.configName;}
+
     /**
      * Gets the size of the genotype array.
      *
@@ -253,6 +269,13 @@ public class SimulationProperties {
      * @return The water violence value.
      */
     public int getWaterViolence() {return this.waterViolence;}
+
+    /**
+     * Gets the boolean value defining if statistics of a simulation with this configuration should be stored.
+     *
+     * @return The boolean value if statistics are to be saved.
+     */
+    public boolean getSaveStatisticsFlag() {return this.saveStatisticsFlag;}
 
     /**
      * Gets the total number of days that have elapsed in the simulation.

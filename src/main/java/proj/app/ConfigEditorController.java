@@ -7,6 +7,7 @@ import proj.model.maps.MapVariant;
 import proj.model.movement.MovementVariant;
 import proj.model.genotype.MutationVariant;
 import proj.model.vegetation.VegetationVariant;
+import proj.simulation.SimulationProperties;
 
 import java.io.IOException;
 
@@ -53,7 +54,7 @@ public class ConfigEditorController {
         }
 
         String configName = configNameField.getText();
-        SimulationConfig config = new SimulationConfig(
+        SimulationProperties config = new SimulationProperties(
                 configName,
                 100, // genotypeSize
                 movementVariant.getValue(),
