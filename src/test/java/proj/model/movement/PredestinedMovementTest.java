@@ -65,7 +65,7 @@ class PredestinedMovementTest {
         Vector2d expectedPosition = new Vector2d(6, 6);
         MapDirection expectedDirection = MapDirection.NORTHEAST;
         assertEquals(expectedPosition, animal.getPos());
-        assertEquals(expectedDirection, animal.getDir());
+        assertEquals(expectedDirection, animal.getDirection());
     }
 
     @Test
@@ -98,7 +98,7 @@ class PredestinedMovementTest {
         Vector2d expectedPosition = new Vector2d(1, 2);
         MapDirection expectedDirection = MapDirection.WEST;
         assertEquals(expectedPosition, animal.getPos());
-        assertEquals(expectedDirection, animal.getDir());
+        assertEquals(expectedDirection, animal.getDirection());
     }
 
     @Test
@@ -112,7 +112,7 @@ class PredestinedMovementTest {
         this.predestinedMovement.move(animal, validator);
 
         assertEquals(new Vector2d(0, 0), animal.getPos());
-        assertEquals(MapDirection.SOUTH, animal.getDir());
+        assertEquals(MapDirection.SOUTH, animal.getDirection());
     }
 }
 

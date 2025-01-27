@@ -63,6 +63,6 @@ class OldAgeAintNoPicnicTest {
         Vector2d expectedPosition = new Vector2d(1, 0);
         MapDirection expectedDirection = MapDirection.EAST;
         assertEquals(expectedPosition, animal.getPos());
-        assertEquals(expectedDirection, animal.getDir());
+        assertEquals(expectedDirection, animal.getDirection());
     }
 }

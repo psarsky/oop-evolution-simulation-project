@@ -26,10 +26,10 @@ public abstract class AbstractMovementVariant implements Movement {
         int newGeneIndex = (animal.getGeneIndex() + 1) % genes.length;
         int rotationAngle = genes[newGeneIndex];
 
-        MapDirection newDirection = animal.getDir().rotate(rotationAngle);
+        MapDirection newDirection = animal.getDirection().rotate(rotationAngle);
         Vector2d newPosition = animal.getPos().add(newDirection.toUnitVector());
 
-        PositionDirectionTuple newPositionDirection = movementModification(animal, animal.getPos(), newPosition, animal.getDir(), newDirection);
+        PositionDirectionTuple newPositionDirection = movementModification(animal, animal.getPos(), newPosition, animal.getDirection(), newDirection);
 
         animal.setGeneIndex(newGeneIndex);
         newPositionDirection = validator.correctPosition(animal.getPos(), newPositionDirection.position(), newPositionDirection.direction());

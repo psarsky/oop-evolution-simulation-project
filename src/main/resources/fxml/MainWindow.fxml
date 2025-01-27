@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="proj.app.MainWindowController"
+      spacing="10" alignment="CENTER" style="-fx-padding: 20;">
+
+    <Label text="Evolution Simulator" style="-fx-font-size: 24;"/>
+
+    <VBox spacing="5" alignment="CENTER">
+        <Label text="Select Configuration:" style="-fx-font-size: 14;"/>
+        <HBox spacing="10" alignment="CENTER">
+            <ComboBox fx:id="configSelect" prefWidth="200"/>
+            <Button fx:id="newConfigButton" text="New Configuration" onAction="#handleNewConfig"/>
+            <Button fx:id="deleteConfigButton" text="Delete Configuration" onAction="#handleDeleteConfig"/>
+        </HBox>
+
+    </VBox>
+
+    <Button fx:id="startSimulationButton" text="Start Simulation"
+            onAction="#handleStartSimulation" disable="true"
+            style="-fx-font-size: 16; -fx-padding: 10 20;"/>
+
+    <Separator/>
+
+    <Label text="Recent Simulations" style="-fx-font-size: 14;"/>
+    <ListView fx:id="recentSimulations" prefHeight="150"/>
+</VBox>
