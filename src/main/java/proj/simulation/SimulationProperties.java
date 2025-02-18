@@ -118,7 +118,7 @@ public class SimulationProperties {
     /**
      * Increments the counter for the number of days elapsed in the simulation.
      */
-    public void incrementDaysElapsed() {this.daysElapsed++;}
+    public synchronized void incrementDaysElapsed() {this.daysElapsed++;}
 
     
     // Getters

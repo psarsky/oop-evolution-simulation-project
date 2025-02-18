@@ -137,7 +137,7 @@ public class WaterWorld extends AbstractWorldMap {
     /**
      * Updates the list of positions where plants can grow by excluding water fields.
      */
-    public void generateFreePlantPositions() {
+    public synchronized void generateFreePlantPositions() {
         this.freePlantPositions.clear();
         for (int x = 0; x < this.simulationProperties.getWidth(); x++) {
             for (int y = 0; y < this.simulationProperties.getHeight(); y++) {
@@ -158,7 +158,7 @@ public class WaterWorld extends AbstractWorldMap {
      * @return              A {@link PositionDirectionTuple} containing the corrected position and direction.
      */
     @Override
-    public PositionDirectionTuple correctPosition(Vector2d oldPosition, Vector2d newPosition, MapDirection direction) {
+    public synchronized PositionDirectionTuple correctPosition(Vector2d oldPosition, Vector2d newPosition, MapDirection direction) {
         PositionDirectionTuple newTuple = super.correctPosition(oldPosition, newPosition, direction);
         if (this.waterFields.containsKey(newTuple.position())) {
             return new PositionDirectionTuple(oldPosition, direction.opposite());
@@ -173,7 +173,7 @@ public class WaterWorld extends AbstractWorldMap {
      * @return          The {@link WorldElement} object at the position, or null if none exists.
      */
     @Override
-    public WorldElement objectAt(Vector2d position) {
+    public synchronized WorldElement objectAt(Vector2d position) {
         if (this.animals.containsKey(position)) {
             if (!this.animals.get(position).isEmpty())
                 return this.animals.get(position).getFirst();

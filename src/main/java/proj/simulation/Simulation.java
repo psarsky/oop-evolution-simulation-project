@@ -71,13 +71,15 @@ public class Simulation implements Runnable {
     public void run() {
         while (!this.animals.isEmpty()) {
             if (this.running) {
-                removeDeadAnimals();
-                updateWorldElements();
-                moveAnimals();
-                eat();
-                reproduce();
-                this.simulationProperties.incrementDaysElapsed();
-                this.map.notifyObservers("Day " + this.simulationProperties.getDaysElapsed() + " elapsed.");
+                synchronized (this) {
+                    removeDeadAnimals();
+                    updateWorldElements();
+                    moveAnimals();
+                    eat();
+                    reproduce();
+                    this.simulationProperties.incrementDaysElapsed();
+                    this.map.notifyObservers("Day " + this.simulationProperties.getDaysElapsed() + " elapsed.");
+                }
             }
             try {
                 Thread.sleep(this.simulationProperties.getSimulationStep());
@@ -92,7 +94,7 @@ public class Simulation implements Runnable {
     /**
      * Removes animals with zero or negative energy, recording their death details.
      */
-    public void removeDeadAnimals() {
+    public synchronized void removeDeadAnimals() {
         List<Animal> deadAnimals = new ArrayList<>();
         for (Animal animal : this.animals) {
             if (animal.getEnergy() <= 0) {
@@ -125,9 +127,11 @@ public class Simulation implements Runnable {
                 if (!animalList.isEmpty()) {
                     animalList.sort(Comparator.comparingInt(Animal::getEnergy).reversed());
                     Animal strongestAnimal = animalList.getFirst();
-                    strongestAnimal.eatPlant(this.simulationProperties.getPlantEnergy());
-                    this.map.getPlants().remove(position);
-                    this.map.getFreePlantPositions().add(position);
+                    synchronized (this) {
+                        strongestAnimal.eatPlant(this.simulationProperties.getPlantEnergy());
+                        this.map.getPlants().remove(position);
+                        this.map.getFreePlantPositions().add(position);
+                    }
                 }
             }
         }
@@ -145,11 +149,13 @@ public class Simulation implements Runnable {
 
                 if (parent1.getEnergy() > this.simulationProperties.getEnergyNeededToReproduce() &&
                         parent2.getEnergy() > this.simulationProperties.getEnergyNeededToReproduce()) {
-                    Animal child = parent1.reproduce(parent2, this.simulationProperties);
-                    if (child != null) {
-                        animalList.add(child);
-                        this.animals.add(child);
-                        this.map.notifyObservers("New child placed at " + child.getPos() + ".");
+                    synchronized (this) {
+                        Animal child = parent1.reproduce(parent2, this.simulationProperties);
+                        if (child != null) {
+                            animalList.add(child);
+                            this.animals.add(child);
+                            this.map.notifyObservers("New child placed at " + child.getPos() + ".");
+                        }
                     }
                 }
             }
