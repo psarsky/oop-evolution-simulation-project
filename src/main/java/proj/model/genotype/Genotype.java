@@ -56,13 +56,30 @@ public class Genotype {
         }
     }
 
+
+    /**
+     * Determines a random boolean value, often used to make binary decisions such as
+     * which parent's genes will be inherited first during reproduction.
+     * This method abstracts the randomization process to allow for better testability
+     * and maintainability of the code.
+     *
+     * By encapsulating the randomness in a separate method, it becomes possible to
+     * override or mock this behavior during testing, enabling deterministic unit tests
+     * for logic that depends on random outcomes.
+     *
+     * @return      A randomly generated boolean value ({@code true} or {@code false
+     */
+    protected boolean randomBool() {
+        return new Random().nextBoolean();
+    }
+
     /**
      * Generates a child's genes based on the genotypes and energies of two parent animals.
      * The child's genes are a combination of sections from each parent's genotype, with
      * the size of each section determined by their respective energy levels.
      *
-     * @param parent1 The first parent ({@link Animal}).
-     * @param parent2 The second parent ({@link Animal}).
+     * @param parent1       The first parent ({@link Animal}).
+     * @param parent2       The second parent ({@link Animal}).
      */
     public void generateChildGenes(Animal parent1, Animal parent2) {
         int[] genotype1 = parent1.getGenes(); // Genotype of parent 1
@@ -79,7 +96,7 @@ public class Genotype {
 
         // Randomly determine the order of parent's gene contribution
         Random random = new Random();
-        boolean takeParent1Left = random.nextBoolean();
+        boolean takeParent1Left = randomBool();
 
         if (takeParent1Left) {
             System.arraycopy(genotype1, 0, genes, 0, splitIndex); // Left part from parent 1
@@ -96,7 +113,7 @@ public class Genotype {
     /**
      * Returns a string representation of the genotype.
      *
-     * @return A {@link String} showing the genes in the genotype.
+     * @return      A {@link String} showing the genes in the genotype.
      */
     @Override
     public String toString() {return Arrays.toString(genes);}
@@ -104,7 +121,7 @@ public class Genotype {
     /**
      * Returns a hash code value for the genotype, based on its genes.
      *
-     * @return The hash code value for the genotype.
+     * @return      The hash code value for the genotype.
      */
     @Override
     public int hashCode() {return Arrays.hashCode(genes);}
@@ -112,16 +129,16 @@ public class Genotype {
     // Getters
 
     /**
-     * Gets the array of genes in the genotype.
+     * Gets an array of genes in the genotype.
      *
-     * @return The array of genes.
+     * @return      The array of genes.
      */
     public int[] getGenes() {return genes;}
 
     /**
      * Gets the mutation utilized in the genotype.
      *
-     * @return {@link Mutation} object.
+     * @return      {@link Mutation} object.
      */
     public Mutation getMutation() {return this.mutation;}
 }

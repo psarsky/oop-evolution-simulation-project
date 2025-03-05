@@ -146,7 +146,7 @@ public class Animal implements WorldElement {
      *
      * @return The animal's current direction as a {@link MapDirection} object.
      */
-    public MapDirection getDir() {return this.positionDirection.direction();}
+    public MapDirection getDirection() {return this.positionDirection.direction();}
 
     /**
      * Gets the current energy level of the animal.
@@ -184,11 +184,35 @@ public class Animal implements WorldElement {
     public int getDeathDate() {return this.deathDate;}
 
     /**
+     * Checks if the animal is alive.
+     *
+     * @return True if the animal is alive, false if it is dead.
+     */
+    public boolean isAlive() {
+        return this.deathDate == -1;
+    }
+
+
+    /**
      * Gets the amount of children that the animal created so far.
      *
      * @return The animal's child count.
      */
     public int getChildrenMade() {return this.childrenMade;}
+
+    /**
+     * Calculates the total number of descendants (direct and indirect) for this animal.
+     *
+     * @return Total number of descendants as an integer.
+     */
+    public int getDescendantsCount() {
+        int count = children.size(); // Bezpośrednie dzieci
+        for (Animal child : children) {
+            count += child.getDescendantsCount(); // Rekurencyjnie dodaj potomków dzieci
+        }
+        return count;
+    }
+
 
     /**
      * Gets the amount of plants that the animal ate so far.
@@ -203,6 +227,15 @@ public class Animal implements WorldElement {
      * @return The animal's age.
      */
     public int getAge() {return this.age;}
+
+    /**
+     * Gets the index of the currently active gene in the genotype.
+     *
+     * @return The index of the active gene.
+     */
+    public int getActiveGeneIndex() {
+        return this.geneIndex;
+    }
 
 
     // Setters

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.canvas.Canvas?>
+
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="proj.app.SimulationWindowController">
+
+    <top>
+        <ToolBar>
+            <Button fx:id="playPauseButton" text="Pause" onAction="#handlePlayPause"/>
+            <Separator orientation="VERTICAL"/>
+            <Label text="Speed:"/>
+            <Slider fx:id="speedSlider" min="0" max="100" value="50"
+                    showTickLabels="true" showTickMarks="true"/>
+            <Separator orientation="VERTICAL"/>
+            <CheckBox fx:id="showStatistics" text="Show Statistics" selected="true"/>
+        </ToolBar>
+    </top>
+
+    <center>
+        <SplitPane dividerPositions="0.8">
+            <!-- Changed the ScrollPane and Canvas setup -->
+            <AnchorPane>
+                <ScrollPane AnchorPane.topAnchor="0.0"
+                            AnchorPane.bottomAnchor="0.0"
+                            AnchorPane.leftAnchor="0.0"
+                            AnchorPane.rightAnchor="0.0">
+                    <StackPane>
+                        <Canvas fx:id="simulationCanvas"/>
+                    </StackPane>
+                </ScrollPane>
+            </AnchorPane>
+
+            <VBox fx:id="statisticsPanel" visible="${showStatistics.selected}">
+                <TitledPane text="Current Simulation Statistics" expanded="true">
+                    <GridPane vgap="5" hgap="10">
+                        <Label text="Day:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                        <Label fx:id="dayCount" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+                        <Label text="Animals:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                        <Label fx:id="animalCount" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+                        <Label text="Plants:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                        <Label fx:id="plantCount" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+                        <Label text="Empty Fields:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                        <Label fx:id="emptyFieldsCount" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+
+                        <Label text="Most Popular Genotypes:" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+                        <TextArea fx:id="popularGenotypes"
+                                  editable="false"
+                                  wrapText="true"
+                                  prefRowCount="18"
+                                  maxHeight="260"
+                                  maxWidth="900"
+                                  GridPane.columnIndex="0"
+                                  GridPane.columnSpan="10"
+                                  GridPane.rowIndex="5"/>
+
+                        <Label text="Average Energy:" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
+                        <Label fx:id="averageEnergy" GridPane.columnIndex="1" GridPane.rowIndex="6"/>
+
+                        <Label text="Average Lifespan:" GridPane.columnIndex="0" GridPane.rowIndex="7"/>
+                        <Label fx:id="averageLifespan" GridPane.columnIndex="1" GridPane.rowIndex="7"/>
+
+                        <Label text="Average Children:" GridPane.columnIndex="0" GridPane.rowIndex="8"/>
+                        <Label fx:id="averageChildren" GridPane.columnIndex="1" GridPane.rowIndex="8"/>
+                    </GridPane>
+                </TitledPane>
+
+                <TitledPane text="Selected Animal" expanded="true">
+                    <GridPane vgap="5" hgap="10">
+                        <Label text="Energy:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                        <Label fx:id="selectedAnimalEnergy" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+                        <Label text="Age:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                        <Label fx:id="selectedAnimalAge" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+                        <Label text="Children:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                        <Label fx:id="selectedAnimalChildren" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+                        <Label text="Plants Eaten:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                        <Label fx:id="selectedAnimalPlantsEaten" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+
+                        <Label text="Genotype:" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+                        <Label fx:id="selectedAnimalGenotype" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+
+                        <Label text="Active Gene:" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+                        <Label fx:id="selectedAnimalActiveGene" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+
+                        <Label text="Descendants:" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
+                        <Label fx:id="selectedAnimalDescendants" GridPane.columnIndex="1" GridPane.rowIndex="6"/>
+
+                        <Label text="Death Day:" GridPane.columnIndex="0" GridPane.rowIndex="7"/>
+                        <Label fx:id="selectedAnimalDeathDate" GridPane.columnIndex="1" GridPane.rowIndex="7"/>
+                    </GridPane>
+                </TitledPane>
+
+            </VBox>
+        </SplitPane>
+    </center>
+
+    <bottom>
+        <HBox spacing="10" alignment="CENTER_RIGHT" style="-fx-padding: 5;">
+            <Button text="Export Statistics" onAction="#handleExportStatistics"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>
