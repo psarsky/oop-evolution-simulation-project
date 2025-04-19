@@ -2,10 +2,6 @@ package proj.app;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
 import proj.simulation.SimulationProperties;
 
 import java.io.*;

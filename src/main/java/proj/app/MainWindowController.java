@@ -6,7 +6,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
-import proj.app.SimulationWindowController;
 import proj.simulation.SimulationProperties;
 
 import java.io.IOException;
@@ -14,7 +13,6 @@ import java.util.Optional;
 
 public class MainWindowController {
     @FXML private ComboBox<String> configSelect;
-    @FXML private Button newConfigButton;
     @FXML private Button startSimulationButton;
     @FXML private ListView<String> recentSimulations;
 
@@ -128,7 +126,7 @@ public class MainWindowController {
             controller.initializeSimulation(currentConfig);
 
             // Add to recent simulations
-            recentSimulations.getItems().add(0, simulationName);
+            recentSimulations.getItems().addFirst(simulationName);
             // Keep only last 10 simulations
             if (recentSimulations.getItems().size() > 10) {
                 recentSimulations.getItems().remove(10, recentSimulations.getItems().size());

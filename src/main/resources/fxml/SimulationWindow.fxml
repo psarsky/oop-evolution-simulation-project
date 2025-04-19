@@ -20,7 +20,6 @@
 
     <center>
         <SplitPane dividerPositions="0.8">
-            <!-- Changed the ScrollPane and Canvas setup -->
             <AnchorPane>
                 <ScrollPane AnchorPane.topAnchor="0.0"
                             AnchorPane.bottomAnchor="0.0"
@@ -96,14 +95,14 @@
                         <Label fx:id="selectedAnimalDeathDate" GridPane.columnIndex="1" GridPane.rowIndex="7"/>
                     </GridPane>
                 </TitledPane>
-
             </VBox>
         </SplitPane>
     </center>
 
     <bottom>
         <HBox spacing="10" alignment="CENTER_RIGHT" style="-fx-padding: 5;">
-            <Button text="Export Statistics" onAction="#handleExportStatistics"/>
+            <Button fx:id="collectingDataButton" text="Collecting data: On" onAction="#handleToggleDataCollection"/>
+            <Button fx:id="takeSnapshotButton" text="Take Snapshot" onAction="#handleTakeSnapshot"/>
         </HBox>
     </bottom>
 

@@ -1,10 +1,4 @@
-/*
-todo:
-add csv logging
- */
-
 package proj.simulation;
-
 
 import proj.model.elements.Animal;
 import proj.model.genotype.Genotype;
@@ -18,82 +12,125 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * The {@code Simulation} class represents the core simulation engine, managing the lifecycle of
- * animals, plants, and other elements on the simulation map.
- * <p>
- * This class implements {@link Runnable} to enable running the simulation in a separate thread.
- * It manages tasks such as animal movement, reproduction, energy consumption, and plant spawning.
- * </p>
- *
- * @author <a href="https://github.com/psarsky">psarsky</a>, <a href="https://github.com/jakubkalinski0">jakubkalinski0</a>
+ * Główna klasa symulacji, zarządza zwierzętami, roślinami i cyklem życia.
+ * Implementuje {@link Runnable}, co pozwala na uruchomienie w oddzielnym wątku.
  */
 public class Simulation implements Runnable {
     private final AbstractWorldMap map;
     private final List<Animal> animals;
     private final SimulationProperties simulationProperties;
     private final List<Animal> deadAnimals;
-    private boolean running;
+    private volatile boolean running = true;  // Czy symulacja jest włączona?
+    private volatile boolean stopped = false; // Czy symulacja została zatrzymana?
+    private final List<Runnable> dayEndListeners = new ArrayList<>(); // Listenerzy końca dnia
 
     /**
-     * Constructs a new {@code Simulation} instance with the specified map, properties, and mutation strategy.
-     *
-     * @param map                  An {@link AbstractWorldMap} object representing the map to simulate.
-     * @param simulationProperties A {@link SimulationProperties} object defining the simulation's parameters.
-     * @param mutation             A {@link Mutation} object defining the strategy for modifying genotypes.
+     * Konstruktor inicjalizujący symulację.
      */
     public Simulation(AbstractWorldMap map, SimulationProperties simulationProperties, Mutation mutation) {
         this.map = map;
         this.animals = new ArrayList<>();
         this.simulationProperties = simulationProperties;
         this.deadAnimals = new ArrayList<>();
-        this.running = true;
 
-        RandomPositionGenerator randomPositionGenerator = new RandomPositionGenerator(this.simulationProperties.getWidth(), this.simulationProperties.getHeight(), this.simulationProperties.getAnimalCount());
-        for(Vector2d animalPosition : randomPositionGenerator) {
+        RandomPositionGenerator randomPositionGenerator = new RandomPositionGenerator(
+                this.simulationProperties.getWidth(),
+                this.simulationProperties.getHeight(),
+                this.simulationProperties.getAnimalCount()
+        );
+
+        for (Vector2d animalPosition : randomPositionGenerator) {
             Genotype genotype = new Genotype(simulationProperties, mutation);
             Animal animal = new Animal(animalPosition, this.simulationProperties, genotype);
             this.animals.add(animal);
             this.map.placeAnimal(animal.getPos(), animal);
-            this.map.notifyObservers("New animal placed at " + animal.getPos() + ".");
+            this.map.notifyObservers("Nowe zwierzę na " + animal.getPos() + ".");
         }
 
         int plantsToAdd = this.simulationProperties.getPlantCount();
         for (int i = 0; i < plantsToAdd; i++) {
             this.map.spawnPlant();
         }
-        this.map.notifyObservers("Initial plants placed.");
+        this.map.notifyObservers("Początkowe rośliny rozmieszczone.");
     }
 
     /**
-     * Starts the simulation, running until there are no animals left or the simulation is paused.
+     * Dodaje listenera końca dnia.
+     *
+     * @param listener Listener do dodania
+     */
+    public void addDayEndListener(Runnable listener) {
+        dayEndListeners.add(listener);
+    }
+
+    /**
+     * Uruchamia symulację w nowym wątku.
+     */
+    public void start() {
+        stopped = false;
+        Thread simulationThread = new Thread(this);
+        simulationThread.start();
+    }
+
+    /**
+     * Zatrzymuje symulację całkowicie.
+     */
+    public void stop() {
+        stopped = true;
+    }
+
+    /**
+     * Wstrzymuje symulację bez możliwości wznowienia (jeśli potrzebne osobno).
+     */
+    public void pause() {
+        running = false;
+    }
+
+    /**
+     * Przełącza stan symulacji między pauzą a wznowieniem.
+     */
+    public void togglePause() {
+        running = !running;
+    }
+
+    /**
+     * Główna pętla symulacji.
      */
     @Override
     public void run() {
-        while (!this.animals.isEmpty()) {
-            if (this.running) {
+        while (!animals.isEmpty() && !stopped) { // Sprawdza, czy symulacja ma się zatrzymać
+            if (running) {
                 synchronized (this) {
                     removeDeadAnimals();
                     updateWorldElements();
                     moveAnimals();
                     eat();
                     reproduce();
-                    this.simulationProperties.incrementDaysElapsed();
-                    this.map.notifyObservers("Day " + this.simulationProperties.getDaysElapsed() + " elapsed.");
+                    simulationProperties.incrementDaysElapsed();
+                    map.notifyObservers("Dzień " + simulationProperties.getDaysElapsed() + " minął.");
+
+                    // Powiadomienie listenerów o końcu dnia
+                    notifyDayEndListeners();
                 }
             }
             try {
-                Thread.sleep(this.simulationProperties.getSimulationStep());
+                Thread.sleep(simulationProperties.getSimulationStep());
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
             }
         }
     }
 
-    // day management methods
-
     /**
-     * Removes animals with zero or negative energy, recording their death details.
+     * Powiadamia wszystkich zarejestrowanych listenerów o końcu dnia.
      */
+    private void notifyDayEndListeners() {
+        for (Runnable listener : dayEndListeners) {
+            listener.run();
+        }
+    }
+
+    // Reszta metod pozostaje bez zmian...
     public synchronized void removeDeadAnimals() {
         List<Animal> deadAnimals = new ArrayList<>();
         for (Animal animal : this.animals) {
@@ -107,19 +144,14 @@ public class Simulation implements Runnable {
         this.deadAnimals.addAll(deadAnimals);
     }
 
-    /**
-     * Updates all inanimate elements on the map.
-     */
-    public void updateWorldElements() {this.map.updateWorldElements();}
+    public void updateWorldElements() {
+        this.map.updateWorldElements();
+    }
 
-    /**
-     * Moves all animals present on the map.
-     */
-    public void moveAnimals() {this.animals.forEach(this.map::move);}
+    public void moveAnimals() {
+        this.animals.forEach(this.map::move);
+    }
 
-    /**
-     * Allows animals to eat plants if available at their position, prioritizing stronger animals.
-     */
     public void eat() {
         for (Vector2d position : this.map.getAnimals().keySet()) {
             if (this.map.getPlants().containsKey(position)) {
@@ -137,9 +169,6 @@ public class Simulation implements Runnable {
         }
     }
 
-    /**
-     * Manages animal reproduction, creating offspring if energy requirements are met.
-     */
     public void reproduce() {
         this.map.getAnimals().values().forEach(animalList -> {
             if (animalList.size() > 1) {
@@ -154,7 +183,7 @@ public class Simulation implements Runnable {
                         if (child != null) {
                             animalList.add(child);
                             this.animals.add(child);
-                            this.map.notifyObservers("New child placed at " + child.getPos() + ".");
+                            this.map.notifyObservers("Nowe zwierzę urodziło się na " + child.getPos() + ".");
                         }
                     }
                 }
@@ -162,41 +191,24 @@ public class Simulation implements Runnable {
         });
     }
 
-    // utilities
-
-    /**
-     * Toggles the running state of the simulation between paused and active.
-     */
-    public void togglePause() {this.running = !this.running;}
-
-    /**
-     * Returns a string representation of the map.
-     *
-     * @return The {@link String} representation of the map.
-     */
     @Override
-    public String toString() {return map.toString();}
+    public String toString() {
+        return map.toString();
+    }
 
-    /**
-     * Gets the list of all alive animals in the simulation.
-     *
-     * @return A {@link List} of {@link Animal} objects.
-     */
-    public List<Animal> getAnimals() {return this.animals;}
+    public List<Animal> getAnimals() {
+        return this.animals;
+    }
 
-    /**
-     * Gets the list of all dead animals in the simulation.
-     *
-     * @return A {@link List} of {@link Animal} objects.
-     */
-    public List<Animal> getDeadAnimals() {return this.deadAnimals;}
+    public List<Animal> getDeadAnimals() {
+        return this.deadAnimals;
+    }
 
-    /**
-     * Gets the current state of the simulation.
-     *
-     * @return  {@code true} if the simulation is running, {@code false} if otherwise.
-     */
-    public boolean isRunning() {return this.running;}
+    public boolean isRunning() {
+        return this.running;
+    }
 
-    public AbstractWorldMap getMap() {return this.map;}
+    public AbstractWorldMap getMap() {
+        return this.map;
+    }
 }

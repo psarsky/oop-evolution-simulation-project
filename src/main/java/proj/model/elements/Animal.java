@@ -206,9 +206,9 @@ public class Animal implements WorldElement {
      * @return Total number of descendants as an integer.
      */
     public int getDescendantsCount() {
-        int count = children.size(); // Bezpośrednie dzieci
-        for (Animal child : children) {
-            count += child.getDescendantsCount(); // Rekurencyjnie dodaj potomków dzieci
+        int count = children.size(); // Direct children
+        for (Animal child : new ArrayList<>(children)) { // Create a copy to avoid concurrent modification
+            count += child.getDescendantsCount(); // Recursively add descendants of children
         }
         return count;
     }
