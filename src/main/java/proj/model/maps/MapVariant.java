@@ -1,26 +1,23 @@
 package proj.model.maps;
 
 /**
- * Enum representing different types of map variants in the simulation.
- * Each variant defines a unique way in which the world map behaves and interacts with entities.
+ * Enumeration defining the available types of world map topologies or variants
+ * used within the simulation. Used to select the appropriate {@link AbstractWorldMap} implementation.
  */
 public enum MapVariant {
     /**
-     * GLOBE:
-     *
-     * Represents a map with a globe-like topology where horizontal wrapping occurs.
-     * Animals that move beyond the left or right edge reappear on the opposite side,
-     * while vertical movement is constrained by the top and bottom boundaries.
+     * Represents a map with globe-like wrapping behavior. Entities moving
+     * horizontally off one edge reappear on the opposite edge. Vertical movement
+     * is bounded. Implemented by {@link Globe}.
      */
     GLOBE,
 
     /**
-     * WATER_WORLD:
-     *
-     * Represents a map with significant water coverage.
-     * Water regions impose specific movement and interaction constraints,
-     * such as restricting land-based entities
-     * or draining energy from the animals that get covered by water during the water tide.
+     * Represents a map featuring significant water bodies that affect movement
+     * and element interactions, potentially including dynamic tides.
+     * Implemented by {@link WaterWorld}.
      */
     WATER_WORLD
+
+    // Add other map variants here if created (e.g., WALLED_MAP, INFINITE_MAP)
 }

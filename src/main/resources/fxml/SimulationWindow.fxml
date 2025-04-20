@@ -4,7 +4,7 @@
 <?import javafx.scene.canvas.Canvas?>
 
 <BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
-            fx:controller="proj.app.SimulationWindowController">
+            fx:controller="proj.app.controllers.SimulationWindowController">
 
     <top>
         <ToolBar>

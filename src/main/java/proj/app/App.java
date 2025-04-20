@@ -5,61 +5,49 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-//import proj.simulation.SimulationProperties;
 
 import java.io.IOException;
 
+/**
+ * The main entry point for the JavaFX Evolution Simulator application.
+ * Responsible for loading the initial main window.
+ */
 public class App extends Application {
 
+    /**
+     * Starts the JavaFX application by loading and displaying the main window.
+     *
+     * @param primaryStage The primary stage for this application, onto which
+     *                     the application scene can be set.
+     */
     @Override
     public void start(Stage primaryStage) {
         try {
-            // Load the main window
+            // Load the main window layout from the FXML file
             FXMLLoader mainLoader = new FXMLLoader();
             mainLoader.setLocation(getClass().getClassLoader().getResource("fxml/MainWindow.fxml"));
             Parent mainRoot = mainLoader.load();
 
-            // Create primary stage with main window
+            // Configure and display the primary stage
             primaryStage.setTitle("Evolution Simulator");
             primaryStage.setScene(new Scene(mainRoot));
             primaryStage.setMinWidth(1024);
             primaryStage.setMinHeight(768);
             primaryStage.show();
 
-            // Main window is loaded and displayed
-            // Note: The MainWindowController will handle opening simulation windows
-            // when the user selects simulation configurations
+            // The MainWindowController handles further actions, like opening simulation windows.
         } catch (IOException e) {
-            System.err.println("Failed to start application: " + e.getMessage());
+            System.err.println("Failed to start the application: " + e.getMessage());
             e.printStackTrace();
+            // Consider showing an error dialog to the user here
         }
     }
 
-//    /**
-//     * Opens a new simulation window with the given configuration.
-//     * This method can be called from MainWindowController when a user starts a new simulation.
-//     *
-//     * @param simulationProperties The properties for the new simulation
-//     * @throws IOException If loading the FXML file fails
-//     */
-//    public static void openSimulationWindow(SimulationProperties simulationProperties) throws IOException {
-//        FXMLLoader simLoader = new FXMLLoader();
-//        simLoader.setLocation(App.class.getClassLoader().getResource("fxml/SimulationWindow.fxml"));
-//        Parent simRoot = simLoader.load();
-//
-//        // Get the controller and initialize the simulation
-//        SimulationWindowController controller = simLoader.getController();
-//        controller.initializeSimulation(simulationProperties);
-//
-//        // Create and show new stage for the simulation
-//        Stage simStage = new Stage();
-//        simStage.setTitle("Evolution Simulation - " + simulationProperties.getConfigName());
-//        simStage.setScene(new Scene(simRoot));
-//        simStage.setMinWidth(900);
-//        simStage.setMinHeight(800);
-//        simStage.show();
-//    }
-
+    /**
+     * The main method to launch the JavaFX application.
+     *
+     * @param args Command line arguments passed to the application. Not used in this application.
+     */
     public static void main(String[] args) {
         launch(args);
     }

@@ -4,7 +4,7 @@
 <?import javafx.geometry.Insets?>
 
 <ScrollPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
-            fx:controller="proj.app.ConfigEditorController" fitToWidth="true">
+            fx:controller="proj.app.controllers.ConfigEditorController" fitToWidth="true">
     <VBox spacing="10" style="-fx-padding: 20;">
         <Label text="Configuration Editor" style="-fx-font-size: 20;"/>
 

@@ -1,16 +1,16 @@
 package proj.model.vegetation;
 
 /**
- * Enum representing different types of vegetation in the simulation.
- * Each variant corresponds to a specific type of plant or vegetation
- * that can exist in the simulated environment.
+ * Enumeration defining the available types of vegetation growth patterns or variants
+ * used within the simulation. Used to select the appropriate {@link AbstractVegetationVariant} implementation.
  */
 public enum VegetationVariant {
     /**
-     * The "Forested Equator" variant:
-     *
-     * This variant represents vegetation typically found in forested equatorial regions,
-     * characterized by dense greenery and high biodiversity.
+     * Represents a vegetation pattern where growth is favored in a central
+     * horizontal band (the "equator") across the map.
+     * Implemented by {@link ForestedEquator}.
      */
     FORESTED_EQUATOR
+
+    // Add other vegetation variants here if created (e.g., TOXIC_CORPSES, FERTILE_FIELDS)
 }

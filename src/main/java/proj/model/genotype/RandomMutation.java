@@ -2,43 +2,60 @@ package proj.model.genotype;
 
 import proj.simulation.SimulationProperties;
 
+import java.util.Objects;
 import java.util.Random;
 
 /**
- * Implementation of a mutation strategy where random genes in the array
- * are replaced with new random values.
- * The number of mutations is determined by the simulation properties.
+ * Implements the {@link Mutation} interface using a random replacement strategy.
+ * A random number of genes (between min and max specified in properties) are chosen
+ * at random indices and replaced with new random gene values (0-7).
  *
  * @author <a href="https://github.com/jakubkalinski0">jakubkalinski0</a>
  */
 public class RandomMutation implements Mutation {
-    private static final Random random = new Random();
+    private static final Random random = new Random(); // Static random instance for efficiency
 
     /**
-     * Applies a random mutation to the given array of genes. A random number of genes
-     * (within the range defined by the simulation properties) is modified. Each mutated
-     * gene is replaced by a random value in the range [0, 7].
+     * Applies random mutations to the provided genotype array.
+     * The number of genes to mutate is chosen randomly between the minimum and maximum
+     * specified in the {@link SimulationProperties}. Each selected gene index is then
+     * assigned a new random value between 0 and 7 (inclusive).
      *
-     * @param Genotype             The array of genes to mutate.
-     * @param simulationProperties The properties of the simulation containing mutation configuration,
-     *                             including the minimum and maximum number of mutations allowed ({@link SimulationProperties}).
+     * @param genes                The integer gene array to mutate in place.
+     * @param simulationProperties The {@link SimulationProperties} defining the min/max number of mutations. Must not be null.
      */
     @Override
-    public void applyMutation(int[] Genotype, SimulationProperties simulationProperties) {
-        if (Genotype.length == 0) return; // If there are no genes, no mutation can be applied.
+    public void applyMutation(int[] genes, SimulationProperties simulationProperties) {
+        Objects.requireNonNull(simulationProperties, "SimulationProperties cannot be null for mutation.");
+        if (genes == null || genes.length == 0) {
+            return; // Cannot mutate empty or null genotype
+        }
 
         int minMutations = simulationProperties.getMinimumNumberOfMutations();
         int maxMutations = simulationProperties.getMaximumNumberOfMutations();
 
-        // Determine the number of mutations to apply, ensuring it is within the defined range.
-        int numberOfMutations = minMutations + random.nextInt(maxMutations - minMutations + 1);
+        // Ensure min/max are valid relative to each other and genotype length
+        minMutations = Math.max(0, minMutations);
+        maxMutations = Math.max(minMutations, Math.min(genes.length, maxMutations)); // Ensure max >= min and max <= length
 
-        // Perform the mutations by randomly selecting indices and modifying their values.
-        for (int i = 0; i < numberOfMutations; i++) {
-            // Select a random index in the gene array.
-            int geneIndex = random.nextInt(Genotype.length);
-            // Assign a new random value in the range [0, 7] to the selected gene.
-            Genotype[geneIndex] = random.nextInt(8);
+        if (minMutations > maxMutations) {
+            // This case should ideally be caught during config validation, but handle defensively
+            System.err.println("Warning: Min mutations (" + minMutations + ") > Max mutations (" + maxMutations + ") in RandomMutation. No mutations applied.");
+            return;
         }
+
+        // Determine the actual number of mutations to apply for this instance
+        int numberOfMutations = (maxMutations == minMutations)
+                ? minMutations
+                : minMutations + random.nextInt(maxMutations - minMutations + 1);
+
+        // Apply the mutations
+        for (int i = 0; i < numberOfMutations; i++) {
+            // Select a random index within the genotype array
+            int geneIndexToMutate = random.nextInt(genes.length);
+            // Assign a new random gene value (0-7)
+            genes[geneIndexToMutate] = random.nextInt(8);
+        }
+        // Genes array is modified in place.
     }
 }
