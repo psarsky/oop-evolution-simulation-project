@@ -1,6 +1,6 @@
 package proj.app.controllers;
 
-import javafx.application.Platform;
+import com.google.gson.Gson;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -9,217 +9,297 @@ import javafx.scene.control.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import proj.app.ActiveSimulationRegistry;
+import proj.app.AppConstants; // Use constants
 import proj.app.ConfigManager;
-import proj.simulation.SimulationProperties;
+import proj.app.SimulationInitializer;
 import proj.app.services.IAlertService;
-import proj.app.services.JavaFXAlertService;
+import proj.app.services.IMessageService; // Import message service
+import proj.simulation.SimulationProperties;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
  * Controller for the main application window (MainWindow.fxml).
- * Handles selection of simulation configurations, starting new simulations,
- * creating new configurations, and deleting existing ones.
- * It also displays a list of recently started simulation runs (for informational purposes only).
+ * This window allows users to select, create, or delete simulation configurations
+ * and launch new simulation instances. It interacts with {@link ConfigManager} for configuration persistence,
+ * {@link ActiveSimulationRegistry} to manage running simulations, and uses injected services
+ * like {@link IAlertService}, {@link IMessageService}, and {@link SimulationInitializer}.
+ * Uses constants from {@link AppConstants}.
  */
 public class MainWindowController {
 
     //<editor-fold desc="FXML Fields">
+    // Define FXML variables matching fx:id attributes in MainWindow.fxml
     @FXML private ComboBox<String> configSelect;
     @FXML private Button startSimulationButton;
+    @FXML private Button newConfigButton;
     @FXML private Button deleteConfigButton;
-    @FXML private ListView<String> recentSimulations; // Displays titles of running/recent simulations
+    @FXML private ListView<String> recentSimulations;
+    @FXML private Label selectConfigLabel;
+    @FXML private Label recentSimulationsLabel;
     //</editor-fold>
 
-    private SimulationProperties currentConfig; // Currently loaded configuration
-    private IAlertService alertService;
-    private static final int MAX_RECENT_SIMULATIONS = 10; // Max items in the recent list
+    //<editor-fold desc="Dependencies (Injected)">
+    private final IAlertService alertService;
+    private final ActiveSimulationRegistry activeSimulationRegistry;
+    private final SimulationInitializer simulationInitializer;
+    private final Gson gson; // Needed by SimulationInitializer implicitly
+    private final IMessageService messageService; // Injected message service
+    //</editor-fold>
+
+    private SimulationProperties currentConfig;
+    // Use constant for max recent items
+    // private static final int MAX_RECENT_SIMULATIONS = AppConstants.MAX_RECENT_SIMULATIONS; // Defined in AppConstants
 
     /**
-     * Initializes the controller after FXML loading.
-     * Sets up the alert service, loads available configurations into the ComboBox,
-     * configures listeners for configuration selection, and disables buttons initially.
-     * The recentSimulations list is configured for display purposes only (no interaction).
+     * Constructs the MainWindowController with injected dependencies.
+     * These dependencies are essential for the controller's operations, such as
+     * showing alerts, managing simulation instances, initializing new simulations,
+     * and retrieving UI text.
+     *
+     * @param alertService             The {@link IAlertService} instance used for displaying messages and errors to the user. Must not be null.
+     * @param activeSimulationRegistry The singleton {@link ActiveSimulationRegistry} instance used to track and stop active simulation windows. Must not be null.
+     * @param simulationInitializer    The {@link SimulationInitializer} instance used when creating and setting up components for a new simulation window. Must not be null.
+     * @param gson                     The shared {@link Gson} instance, primarily needed by the {@link SimulationInitializer} for components it creates. Must not be null.
+     * @param messageService           The {@link IMessageService} instance used for retrieving localized or configured UI strings. Must not be null.
+     * @throws NullPointerException if any injected dependency is null.
+     */
+    public MainWindowController(IAlertService alertService,
+                                ActiveSimulationRegistry activeSimulationRegistry,
+                                SimulationInitializer simulationInitializer,
+                                Gson gson,
+                                IMessageService messageService) { // Added messageService
+        this.alertService = Objects.requireNonNull(alertService, "AlertService cannot be null");
+        this.activeSimulationRegistry = Objects.requireNonNull(activeSimulationRegistry, "ActiveSimulationRegistry cannot be null");
+        this.simulationInitializer = Objects.requireNonNull(simulationInitializer, "SimulationInitializer cannot be null");
+        this.gson = Objects.requireNonNull(gson, "Gson instance cannot be null");
+        this.messageService = Objects.requireNonNull(messageService, "MessageService cannot be null"); // Store message service
+    }
+
+    /**
+     * Initializes the controller after FXML loading and dependency injection.
+     * This method is automatically called by the FXMLLoader. It loads the list of available
+     * configurations into the ComboBox, sets up listeners for selection changes,
+     * disables action buttons initially, configures the recent simulations list display,
+     * and sets localized text for static UI elements using the injected {@link IMessageService}.
      */
     @FXML
     public void initialize() {
-        this.alertService = new JavaFXAlertService();
-        loadAvailableConfigs(); // Populate ComboBox
-
-        // Disable buttons until a config is selected
+        loadAvailableConfigs(); // Load data first
+        // Set initial state
         startSimulationButton.setDisable(true);
         deleteConfigButton.setDisable(true);
-
-        // Listener for ComboBox selection changes
-        configSelect.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-            handleConfigSelectionChange(newVal);
-        });
-
-        // Configure ListView for display only (no selection actions)
+        // Setup listeners
+        configSelect.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> handleConfigSelectionChange(newVal));
+        // Configure list view appearance/behavior
         recentSimulations.setFocusTraversable(false);
-        recentSimulations.getSelectionModel().setSelectionMode(SelectionMode.SINGLE); // Allow single select visually if needed
-        // Do NOT add mouse click listeners for starting simulations from this list.
+        recentSimulations.getSelectionModel().setSelectionMode(SelectionMode.SINGLE); // Visual only
+        // Set localized text
+        setUIText();
+    }
+
+    /** Sets static text elements using the MessageService. */
+    private void setUIText() {
+        selectConfigLabel.setText(messageService.getMessage("main.label.selectConfig"));
+        recentSimulationsLabel.setText(messageService.getMessage("main.window.recent.simulations.label"));
+        startSimulationButton.setText(messageService.getMessage("main.button.start"));
+        newConfigButton.setText(messageService.getMessage("main.button.newConfig"));
+        deleteConfigButton.setText(messageService.getMessage("main.button.deleteConfig"));
+        // Note: Main window title is set in App.java using messageService
     }
 
     // --- Event Handlers ---
 
     /**
-     * Handles the action of clicking the 'New Configuration' button.
-     * Opens the configuration editor window (ConfigEditor.fxml) in a new stage.
-     * Sets a callback to refresh the config list and select the newly created config upon saving.
+     * Handles the action triggered by clicking the 'New Configuration' button.
+     * It loads the configuration editor (ConfigEditor.fxml) into a new modal window.
+     * A ControllerFactory is used to inject the required {@link IAlertService} and
+     * {@link IMessageService} into the {@link ConfigEditorController}. It sets a callback
+     * on the editor controller to refresh the configuration list in this window when the
+     * new configuration is saved. Uses {@link IMessageService} for window title and errors.
      */
     @FXML
     private void handleNewConfig() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/ConfigEditor.fxml"));
-            if (loader.getLocation() == null) {
-                throw new IOException("Cannot find FXML file: /fxml/ConfigEditor.fxml");
-            }
-            Parent root = loader.load();
+            if (loader.getLocation() == null) { throw new IOException("Cannot find FXML file: /fxml/ConfigEditor.fxml"); }
 
-            Stage stage = new Stage();
-            stage.setTitle("New Simulation Configuration");
-            stage.setScene(new Scene(root));
-            stage.initModality(Modality.APPLICATION_MODAL); // Block main window while editor is open
-            stage.initOwner(configSelect.getScene().getWindow()); // Set owner for the MODAL editor window
-
-            ConfigEditorController controller = loader.getController();
-
-            // Set callback to run after the new config is saved in the editor
-            controller.setOnConfigSaved(() -> {
-                loadAvailableConfigs(); // Refresh the list in ComboBox
-                String lastSaved = controller.getLastSavedConfigName();
-                if (lastSaved != null) {
-                    configSelect.getSelectionModel().select(lastSaved); // Auto-select the new config
+            // Use ControllerFactory to inject both services into ConfigEditorController
+            loader.setControllerFactory(controllerClass -> {
+                if (controllerClass == ConfigEditorController.class) {
+                    return new ConfigEditorController(this.alertService, this.messageService);
+                } else { // Default behavior for other potential controllers
+                    try { return controllerClass.getDeclaredConstructor().newInstance(); } catch (Exception e) { throw new RuntimeException(e); }
                 }
             });
 
-            stage.showAndWait(); // Show editor and wait for it to close
+            Parent root = loader.load();
+            Stage stage = new Stage();
+            // Use message service for title
+            stage.setTitle(messageService.getMessage("config.editor.title.new"));
+            stage.setScene(new Scene(root));
+            stage.initModality(Modality.APPLICATION_MODAL); // Block main window
+            stage.initOwner(getOwnWindow()); // Set parent window
+
+            ConfigEditorController controller = loader.getController(); // Get controller instance created by factory
+            // Set callback to refresh list on save
+            controller.setOnConfigSaved(() -> {
+                loadAvailableConfigs();
+                String lastSaved = controller.getLastSavedConfigName();
+                if (lastSaved != null) { configSelect.getSelectionModel().select(lastSaved); } // Auto-select new config
+            });
+
+            stage.showAndWait(); // Show modal editor window and wait
 
         } catch (IOException e) {
-            alertService.showAlert(IAlertService.AlertType.ERROR, "Error", "Error opening configuration editor: " + e.getMessage());
+            alertService.showAlert(IAlertService.AlertType.ERROR,
+                    messageService.getMessage("error.title"),
+                    messageService.getFormattedMessage("error.open.configEditor", e.getMessage()));
             e.printStackTrace();
         } catch (Exception e) {
-            alertService.showAlert(IAlertService.AlertType.ERROR, "Error", "An unexpected error occurred while opening the editor: " + e.getMessage());
+            alertService.showAlert(IAlertService.AlertType.ERROR,
+                    messageService.getMessage("error.title"),
+                    messageService.getFormattedMessage("error.unexpected", e.getMessage())); // Use generic unexpected error key
             e.printStackTrace();
         }
     }
 
-
     /**
-     * Handles the action of clicking the 'Delete Configuration' button.
-     * Prompts the user for confirmation before deleting the currently selected configuration file
-     * using {@link ConfigManager}. Refreshes the configuration list afterwards.
+     * Handles the action triggered by clicking the 'Delete Configuration' button.
+     * It confirms the action with the user via a localized dialog. If confirmed, it uses the injected
+     * {@link ActiveSimulationRegistry} to stop any running simulations associated with
+     * the selected configuration, then deletes the configuration file using {@link ConfigManager}.
+     * Finally, it updates the UI (ComboBox, recent list) and shows localized feedback using the
+     * injected {@link IAlertService} and {@link IMessageService}.
      */
     @FXML
     private void handleDeleteConfig() {
         String selectedConfigName = configSelect.getSelectionModel().getSelectedItem();
         if (selectedConfigName == null) {
-            // Should not happen if button is disabled correctly, but check anyway
-            alertService.showAlert(IAlertService.AlertType.WARNING, "Delete Configuration", "Please select a configuration to delete.");
+            alertService.showAlert(IAlertService.AlertType.WARNING,
+                    messageService.getMessage("warning.title"),
+                    messageService.getMessage("warning.delete.select"));
             return;
         }
 
-        // Confirmation Dialog
+        // Confirmation Dialog using localized text
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmation.setTitle("Delete Configuration");
-        confirmation.setHeaderText("Delete Configuration: " + selectedConfigName);
-        confirmation.setContentText("Are you sure you want to permanently delete the configuration file '"
-                + selectedConfigName + ".json'? This action cannot be undone.");
-        confirmation.initOwner(configSelect.getScene().getWindow()); // Set owner for dialog
-
+        confirmation.setTitle(messageService.getMessage("dialog.deleteConfig.title"));
+        confirmation.setHeaderText(messageService.getFormattedMessage("dialog.deleteConfig.header", selectedConfigName));
+        confirmation.setContentText(messageService.getFormattedMessage("dialog.deleteConfig.content", selectedConfigName));
+        confirmation.initOwner(getOwnWindow());
         Optional<ButtonType> result = confirmation.showAndWait();
 
         if (result.isPresent() && result.get() == ButtonType.OK) {
-            // User confirmed deletion
             try {
-                // 1. Stop and close running simulations using this config FIRST
+                // Use injected registry to stop simulations
                 System.out.println("Attempting to stop active simulations using config: " + selectedConfigName);
-                stopSimulationsUsingConfig(selectedConfigName);
+                int stoppedCount = this.activeSimulationRegistry.stopSimulations(selectedConfigName);
+                System.out.println("Registry stopped " + stoppedCount + " simulation(s).");
 
-                // 2. Delete the configuration file
+                // Delete config file
                 ConfigManager.deleteConfig(selectedConfigName);
-                alertService.showAlert(IAlertService.AlertType.INFO, "Success", "Configuration '" + selectedConfigName + "' deleted and associated simulations stopped.");
 
-                // 3. Remove from recent list (optional now, but good practice)
-                recentSimulations.getItems().removeIf(title -> selectedConfigName.equals(extractConfigName(title)));
+                // Format localized success message
+                String simsStoppedMsg = (stoppedCount > 0)
+                        ? messageService.getFormattedMessage("info.delete.simsStopped", stoppedCount)
+                        : messageService.getMessage("info.delete.noSimsStopped");
+                alertService.showAlert(IAlertService.AlertType.INFO,
+                        messageService.getMessage("info.title"),
+                        messageService.getFormattedMessage("info.delete.success", selectedConfigName, simsStoppedMsg));
 
-                // 4. Refresh the ComboBox (will clear selection if deleted config was selected)
-                loadAvailableConfigs();
+                // Update UI
+                recentSimulations.getItems().removeIf(title -> selectedConfigName.equals(extractConfigNameFromTitle(title)));
+                loadAvailableConfigs(); // Refreshes ComboBox and resets selection/buttons if needed
+
             } catch (FileNotFoundException e) {
-                alertService.showAlert(IAlertService.AlertType.ERROR, "Error", "Could not delete configuration '" + selectedConfigName + "': File not found.");
+                alertService.showAlert(IAlertService.AlertType.ERROR,
+                        messageService.getMessage("error.title"),
+                        messageService.getFormattedMessage("error.delete.config.nf", selectedConfigName));
             } catch (IOException e) {
-                alertService.showAlert(IAlertService.AlertType.ERROR, "Error", "Error deleting configuration '" + selectedConfigName + "': " + e.getMessage());
+                alertService.showAlert(IAlertService.AlertType.ERROR,
+                        messageService.getMessage("error.title"),
+                        messageService.getFormattedMessage("error.delete.config.io", selectedConfigName, e.getMessage()));
                 e.printStackTrace();
             } catch (Exception e) {
-                alertService.showAlert(IAlertService.AlertType.ERROR,"Error", "An unexpected error occurred during deletion: " + e.getMessage());
+                alertService.showAlert(IAlertService.AlertType.ERROR,
+                        messageService.getMessage("error.title"),
+                        messageService.getFormattedMessage("error.delete.config.unexpected", e.getMessage()));
                 e.printStackTrace();
             }
         }
     }
 
     /**
-     * Handles the action of clicking the 'Start Simulation' button.
-     * Verifies that a configuration is selected, prompts the user for a unique name for the simulation run,
-     * and then calls {@link #startSimulation(String)} to launch the simulation window.
+     * Handles the action triggered by clicking the 'Start Simulation' button.
+     * It first verifies that a configuration has been loaded. If so, it prompts the user
+     * to enter a name for this specific simulation run using a localized dialog. If a valid name
+     * is provided, it calls {@link #startSimulation(String)} to launch the simulation window.
+     * Uses the injected {@link IAlertService} and {@link IMessageService} for warnings or errors.
      */
     @FXML
     private void handleStartSimulation() {
         if (currentConfig == null) {
-            alertService.showAlert(IAlertService.AlertType.WARNING, "Start Simulation", "Please select a configuration from the list first.");
+            alertService.showAlert(IAlertService.AlertType.WARNING,
+                    messageService.getMessage("warning.title"),
+                    messageService.getMessage("warning.start.select"));
             return;
         }
 
-        // Prompt user for a name for this specific simulation instance
-        TextInputDialog dialog = new TextInputDialog("Simulation_" + currentConfig.getConfigName() + "_" + (System.currentTimeMillis() % 1000));
-        dialog.setTitle("Start New Simulation");
-        dialog.setHeaderText("Starting simulation with config: " + currentConfig.getConfigName());
-        dialog.setContentText("Enter a name for this simulation run:");
-        dialog.initOwner(configSelect.getScene().getWindow()); // Set owner for dialog
-
+        // Prompt for a name for this simulation run using localized text
+        TextInputDialog dialog = new TextInputDialog("Sim_" + currentConfig.getConfigName() + "_" + (System.currentTimeMillis() % 1000));
+        dialog.setTitle(messageService.getMessage("dialog.startSim.title"));
+        dialog.setHeaderText(messageService.getFormattedMessage("dialog.startSim.header", currentConfig.getConfigName()));
+        dialog.setContentText(messageService.getMessage("dialog.startSim.content"));
+        dialog.initOwner(getOwnWindow());
         Optional<String> result = dialog.showAndWait();
 
         result.ifPresent(nameInput -> {
             String simulationName = nameInput.trim();
             if (!simulationName.isEmpty()) {
-                // Create a unique title for the window including the run name and config name
+                // Construct the initial title; SimWindowController will format it using message service
                 String simulationTitle = simulationName + " - (" + currentConfig.getConfigName() + ")";
                 startSimulation(simulationTitle); // Launch the simulation window
             } else {
-                alertService.showAlert(IAlertService.AlertType.WARNING, "Invalid Name", "Simulation run name cannot be empty.");
+                alertService.showAlert(IAlertService.AlertType.WARNING,
+                        messageService.getMessage("warning.title"),
+                        messageService.getMessage("warning.start.nameEmpty"));
             }
         });
-        // If user cancels, do nothing.
     }
-
 
     // --- Private Helper Methods ---
 
     /**
-     * Loads the currently selected configuration when the ComboBox selection changes.
-     * Enables or disables action buttons based on whether a valid configuration is loaded.
+     * Called when the ComboBox selection changes. Loads the selected configuration properties
+     * using {@link ConfigManager} and enables/disables action buttons accordingly.
+     * Uses the injected {@link IAlertService} and {@link IMessageService} to show errors if loading fails.
      *
-     * @param selectedConfigName The name of the newly selected configuration, or null if cleared.
+     * @param selectedConfigName The name of the configuration selected in the ComboBox, or null if the selection is cleared.
      */
     private void handleConfigSelectionChange(String selectedConfigName) {
         if (selectedConfigName != null) {
             try {
                 currentConfig = ConfigManager.loadConfig(selectedConfigName);
                 startSimulationButton.setDisable(false);
-                deleteConfigButton.setDisable(false); // Enable delete button
+                deleteConfigButton.setDisable(false);
             } catch (IOException e) {
-                alertService.showAlert(IAlertService.AlertType.ERROR, "Load Error", "Error loading configuration '" + selectedConfigName + "': " + e.getMessage());
+                alertService.showAlert(IAlertService.AlertType.ERROR,
+                        messageService.getMessage("error.title"),
+                        messageService.getFormattedMessage("error.load.config", selectedConfigName, e.getMessage()));
+                // Reset state on error
                 startSimulationButton.setDisable(true);
                 deleteConfigButton.setDisable(true);
                 currentConfig = null;
-                configSelect.getSelectionModel().clearSelection(); // Clear invalid selection
+                configSelect.getSelectionModel().clearSelection();
             }
         } else {
-            // No selection or cleared selection
+            // No selection, disable buttons and clear loaded config
             startSimulationButton.setDisable(true);
             deleteConfigButton.setDisable(true);
             currentConfig = null;
@@ -227,183 +307,143 @@ public class MainWindowController {
     }
 
     /**
-     * Loads the simulation window (SimulationWindow.fxml), initializes its controller
-     * with the currently selected configuration (`currentConfig`), and displays the window in a new stage.
-     * Adds the simulation title to the 'recent simulations' list.
-     * REMOVED the initOwner call to allow independent window layering.
+     * Loads and displays the simulation window (SimulationWindow.fxml) in a new, non-modal stage.
+     * It uses a ControllerFactory to inject the required dependencies ({@link IAlertService},
+     * {@link SimulationInitializer}, {@link ActiveSimulationRegistry}, {@link IMessageService}) into the
+     * {@link SimulationWindowController} instance. It then calls the simulation controller's
+     * {@code setupAndRunSimulation} method to initialize and start the simulation display and logic.
+     * Finally, it updates the list of recent simulations displayed in this window. Uses {@link IMessageService} for errors.
      *
-     * @param simulationTitle The unique title to be displayed on the simulation window.
-     *                        Should contain the config name parsable by `extractConfigName`.
+     * @param simulationTitle The unique title to be initially set on the simulation window. Should not be null or empty.
+     *                        (Note: SimulationWindowController might reformat this title using message service).
      */
     private void startSimulation(String simulationTitle) {
-        if (currentConfig == null) {
-            alertService.showAlert(IAlertService.AlertType.ERROR, "Internal Error", "Cannot start simulation: No configuration is loaded.");
+        if (currentConfig == null) { // Should be handled by button state, but defensive check
+            alertService.showAlert(IAlertService.AlertType.ERROR, "Internal Error", "Cannot start simulation: No configuration loaded.");
             return;
         }
-
-        // Double-check config name consistency (optional but safe)
-        String configNameFromTitle = extractConfigName(simulationTitle);
-        if (!currentConfig.getConfigName().equals(configNameFromTitle)) {
-            alertService.showAlert(IAlertService.AlertType.ERROR, "Configuration Mismatch",
-                    "Internal Error: Window title implies config '" + configNameFromTitle +
-                            "', but the loaded config is '" + currentConfig.getConfigName() + "'.");
-            return;
-        }
-
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/SimulationWindow.fxml"));
-            if (loader.getLocation() == null) {
-                throw new IOException("Cannot find FXML file: /fxml/SimulationWindow.fxml");
-            }
-            Parent root = loader.load();
+            if (loader.getLocation() == null) { throw new IOException("Cannot find FXML file: /fxml/SimulationWindow.fxml"); }
 
+            // Use ControllerFactory to inject all necessary dependencies
+            loader.setControllerFactory(controllerClass -> {
+                if (controllerClass == SimulationWindowController.class) {
+                    return new SimulationWindowController(
+                            this.alertService,
+                            this.simulationInitializer,
+                            this.activeSimulationRegistry,
+                            this.messageService // Pass message service
+                    );
+                } else { // Default behavior for other controllers
+                    try { return controllerClass.getDeclaredConstructor().newInstance(); } catch (Exception e) { throw new RuntimeException(e); }
+                }
+            });
+
+            Parent root = loader.load();
             Stage stage = new Stage();
-            stage.setTitle(simulationTitle);
+            stage.setTitle(simulationTitle); // Set initial title
             Scene scene = new Scene(root);
             stage.setScene(scene);
-            stage.setMinWidth(900);
-            stage.setMinHeight(700);
+            stage.setMinWidth(900); stage.setMinHeight(700);
 
-            // --- THE CHANGE IS HERE: initOwner is removed ---
-            // stage.initOwner(configSelect.getScene().getWindow()); // REMOVED
-
-            SimulationWindowController controller = loader.getController();
-            stage.setUserData(controller);
-            // Pass the loaded config and the stage itself to the controller
+            SimulationWindowController controller = loader.getController(); // Get the created controller
+            // Initialize and start the simulation within the new window
             controller.setupAndRunSimulation(currentConfig, stage);
 
-            // Update the informational 'recent simulations' list
-            updateRecentSimulationsList(simulationTitle);
-
-            stage.show(); // Show the simulation window as an independent window
+            updateRecentSimulationsList(simulationTitle); // Add to local recent list
+            stage.show(); // Show the independent simulation window
 
         } catch (IOException e) {
-            alertService.showAlert(IAlertService.AlertType.ERROR, "Error", "Error opening simulation window: " + e.getMessage());
+            alertService.showAlert(IAlertService.AlertType.ERROR,
+                    messageService.getMessage("error.title"),
+                    messageService.getFormattedMessage("error.open.simWindow", e.getMessage()));
             e.printStackTrace();
         } catch (Exception e) {
-            alertService.showAlert(IAlertService.AlertType.ERROR, "Error", "An unexpected error occurred during simulation setup: " + e.getMessage());
+            alertService.showAlert(IAlertService.AlertType.ERROR,
+                    messageService.getMessage("error.title"),
+                    messageService.getFormattedMessage("error.sim.setup.unexpected", e.getMessage()));
             e.printStackTrace();
         }
     }
 
     /**
      * Adds the title of a newly started simulation to the top of the recentSimulations ListView,
-     * removing duplicates and trimming the list if it exceeds the maximum size.
+     * removing duplicates and trimming the list if it exceeds the limit defined by {@link AppConstants}.
      *
-     * @param simulationTitle The title of the simulation run to add.
+     * @param simulationTitle The title of the simulation run (used as the display string).
      */
     private void updateRecentSimulationsList(String simulationTitle) {
-        recentSimulations.getItems().remove(simulationTitle); // Remove if already exists (e.g., rerun)
+        recentSimulations.getItems().remove(simulationTitle); // Remove if already present (e.g., rerun)
         recentSimulations.getItems().addFirst(simulationTitle); // Add to the top
-
-        // Limit the list size
-        if (recentSimulations.getItems().size() > MAX_RECENT_SIMULATIONS) {
-            recentSimulations.getItems().remove(MAX_RECENT_SIMULATIONS, recentSimulations.getItems().size());
+        // Limit list size using constant
+        if (recentSimulations.getItems().size() > AppConstants.MAX_RECENT_SIMULATIONS) {
+            recentSimulations.getItems().remove(AppConstants.MAX_RECENT_SIMULATIONS, recentSimulations.getItems().size());
         }
-        // Do not select the item, list is informational only
     }
 
     /**
-     * Attempts to extract the configuration name from a simulation window title.
-     * Assumes the title format is "Simulation Run Name - (ConfigName)".
+     * Extracts the configuration name from a simulation window title string.
+     * Assumes the format "Run Name - (ConfigName)". Used only for filtering the recent list display.
      *
-     * @param simulationTitle The title string from the recentSimulations list or Stage.
-     * @return The extracted configuration name, or a default string ("Unknown Config") if parsing fails.
+     * @param simulationTitle The title string from the recentSimulations list. Can be null.
+     * @return The extracted configuration name as a String, or "Unknown Config" if parsing fails or input is null.
      */
-    private String extractConfigName(String simulationTitle) {
+    private String extractConfigNameFromTitle(String simulationTitle) {
         if (simulationTitle == null) return "Unknown Config";
-        // Look for the pattern " - (" near the end
+        // Find the last occurrence of " - (" to handle potential dashes in run name
         int separatorIndex = simulationTitle.lastIndexOf(" - (");
+        // Check if separator was found and the string ends with ")"
         if (separatorIndex != -1 && simulationTitle.endsWith(")")) {
-            // Extract the text between " - (" and the closing ")"
+            // Extract the part between " - (" and ")"
             return simulationTitle.substring(separatorIndex + 4, simulationTitle.length() - 1);
         }
-        // Log if format is unexpected? Optional, maybe just return default.
-        // System.err.println("Could not extract config name from title: " + simulationTitle);
-        return "Unknown Config"; // Fallback
+        return "Unknown Config"; // Fallback if format doesn't match
     }
 
     /**
-     * Reloads the list of available configuration names from the {@link ConfigManager}
-     * and updates the ComboBox. It attempts to preserve the current selection if possible.
+     * Reloads the list of available configuration names from {@link ConfigManager}
+     * and updates the ComboBox items. Attempts to preserve the previously selected item if it still exists.
      * Disables action buttons if no configurations are available or if loading fails.
+     * Uses the injected {@link IAlertService} and {@link IMessageService} to display loading errors.
      */
     private void loadAvailableConfigs() {
         String previouslySelected = configSelect.getSelectionModel().getSelectedItem();
         try {
             List<String> configs = ConfigManager.getAvailableConfigs();
-            configSelect.getItems().setAll(configs); // Update ComboBox items
+            configSelect.getItems().setAll(configs); // Replace items in ComboBox
 
+            // Restore selection if possible
             if (previouslySelected != null && configs.contains(previouslySelected)) {
-                // Restore previous selection if it still exists
                 configSelect.getSelectionModel().select(previouslySelected);
-                handleConfigSelectionChange(previouslySelected); // Reload config and update buttons
+                // No need to call handleConfigSelectionChange here, selection listener will fire
             } else {
-                // Clear selection if previous doesn't exist or was null
-                configSelect.getSelectionModel().clearSelection();
-                handleConfigSelectionChange(null); // Clear loaded config and disable buttons
+                configSelect.getSelectionModel().clearSelection(); // Clear if previous selection gone
+                // handleConfigSelectionChange(null) will be called by listener
             }
+            // Update button states based on whether anything is selected now
+            handleConfigSelectionChange(configSelect.getSelectionModel().getSelectedItem());
+
         } catch (IOException e) {
-            alertService.showAlert(IAlertService.AlertType.ERROR, "Load Error", "Error loading available configurations: " + e.getMessage());
-            configSelect.getItems().clear();
-            handleConfigSelectionChange(null); // Clear loaded config and disable buttons
+            alertService.showAlert(IAlertService.AlertType.ERROR,
+                    messageService.getMessage("error.title"),
+                    messageService.getFormattedMessage("error.load.configs", e.getMessage()));
+            configSelect.getItems().clear(); // Clear items on error
+            handleConfigSelectionChange(null); // Ensure buttons are disabled
         }
     }
 
     /**
-     * Finds and stops all running simulation windows that were started with the specified configuration name.
-     * It iterates through all open JavaFX Stages, checks their titles, and if a match is found,
-     * retrieves the stored `SimulationWindowController` from the Stage's UserData to call its stop method.
-     * Finally, it closes the Stage.
+     * Helper method to get the {@link Window} (Stage) containing this controller's scene.
+     * Useful for setting the owner of modal dialogs (like confirmation or input dialogs).
      *
-     * @param configNameToStop The name of the configuration whose associated simulation windows should be stopped.
+     * @return The owning {@link Window}, or {@code null} if the scene or window is not yet available (e.g., during early initialization).
      */
-    private void stopSimulationsUsingConfig(String configNameToStop) {
-        int stoppedCount = 0;
-        // Iterate over a copy of the windows list to avoid ConcurrentModificationException if closing modifies the list
-        List<Window> openWindows = new ArrayList<>(Window.getWindows());
-
-        for (Window window : openWindows) {
-            // We are only interested in Stages that might be our simulation windows
-            if (window instanceof Stage stage) {
-                String title = stage.getTitle();
-                if (title != null) {
-                    String windowConfigName = extractConfigName(title); // Check if title matches format
-                    if (configNameToStop.equals(windowConfigName)) {
-                        // This window uses the configuration being deleted
-                        Object userData = stage.getUserData(); // Retrieve controller stored earlier
-                        if (userData instanceof SimulationWindowController controller) {
-                            try {
-                                System.out.println("Stopping simulation in window: " + title);
-                                controller.stopSimulationThreads(); // Gracefully stop simulation threads
-                                // Closing the stage should ideally happen after threads stop,
-                                // but closing it here ensures immediate UI feedback.
-                                // RunLater might be needed if stopSimulationThreads takes time and blocks UI thread.
-                                Platform.runLater(stage::close); // Close the window on the FX thread
-                                stoppedCount++;
-                            } catch (Exception e) {
-                                System.err.println("Error stopping/closing simulation window '" + title + "': " + e.getMessage());
-                                e.printStackTrace();
-                                // Attempt to close anyway?
-                                Platform.runLater(stage::close);
-                            }
-                        } else {
-                            // Log if we found a matching window but couldn't get controller
-                            System.err.println("Warning: Window '" + title + "' matched config '" + configNameToStop + "' but controller instance was not found in UserData.");
-                        }
-                    }
-                }
-            }
-        }
-        if (stoppedCount > 0) {
-            System.out.println("Stopped and closed " + stoppedCount + " simulation window(s) using config '" + configNameToStop + "'.");
-        } else {
-            System.out.println("No running simulation windows found using config '" + configNameToStop + "'.");
-        }
-    }
-
-    /** Helper method to get the current window, useful for setting dialog owners. */
     private Window getOwnWindow() {
-        return configSelect.getScene().getWindow();
+        // Ensure controls are initialized and have a scene/window
+        if (configSelect != null && configSelect.getScene() != null) {
+            return configSelect.getScene().getWindow();
+        }
+        return null; // Fallback if called too early or UI is detached
     }
 }

@@ -6,16 +6,16 @@
 <ScrollPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
             fx:controller="proj.app.controllers.ConfigEditorController" fitToWidth="true">
     <VBox spacing="10" style="-fx-padding: 20;">
+        <!-- Title Label - No fx:id needed if text set statically -->
         <Label text="Configuration Editor" style="-fx-font-size: 20;"/>
 
         <GridPane vgap="10" hgap="10">
             <padding><Insets top="10" bottom="10"/></padding>
 
-            <!-- Basic Settings -->
+            <!-- Column 0 & 1: Basic and Map/Sim Settings -->
             <Label text="Configuration Name:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
             <TextField fx:id="configNameField" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
 
-            <!-- Map Settings -->
             <Label text="Map Settings" style="-fx-font-weight: bold;"
                    GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="2"/>
 
@@ -33,7 +33,6 @@
             <Label text="Equator Height:" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
             <Spinner fx:id="equatorHeightSpinner" editable="true" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
 
-            <!-- Simulation Settings -->
             <Label text="Simulation Settings" style="-fx-font-weight: bold;"
                    GridPane.columnIndex="0" GridPane.rowIndex="6" GridPane.columnSpan="2"/>
 
@@ -46,10 +45,10 @@
             <Label text="Vegetation Type:" GridPane.columnIndex="0" GridPane.rowIndex="9"/>
             <ComboBox fx:id="vegetationVariant" GridPane.columnIndex="1" GridPane.rowIndex="9"/>
 
-            <Label text="Simulation Step:" GridPane.columnIndex="0" GridPane.rowIndex="10"/>
+            <Label text="Step Delay (ms):" GridPane.columnIndex="0" GridPane.rowIndex="10"/> <!-- Updated text -->
             <Spinner fx:id="simulationStepSpinner" editable="true" GridPane.columnIndex="1" GridPane.rowIndex="10"/>
 
-            <!-- World elements -->
+            <!-- Column 2 & 3: World Elements & Reproduction/Mutation -->
             <Label text="World elements" style="-fx-font-weight: bold;"
                    GridPane.columnIndex="2" GridPane.rowIndex="1" GridPane.columnSpan="2"/>
 
@@ -62,7 +61,7 @@
             <Label text="Plant Energy:" GridPane.columnIndex="2" GridPane.rowIndex="4"/>
             <Spinner fx:id="plantEnergySpinner" editable="true" GridPane.columnIndex="3" GridPane.rowIndex="4"/>
 
-            <Label text="Water Violence:" GridPane.columnIndex="2" GridPane.rowIndex="5"/>
+            <Label text="Water Violence (%):" GridPane.columnIndex="2" GridPane.rowIndex="5"/> <!-- Updated text -->
             <Spinner fx:id="waterViolenceSpinner" editable="true" GridPane.columnIndex="3" GridPane.rowIndex="5"/>
 
             <Label text="Initial Animal Count:" GridPane.columnIndex="2" GridPane.rowIndex="6"/>
@@ -74,9 +73,8 @@
             <Label text="Energy Cost to Move:" GridPane.columnIndex="2" GridPane.rowIndex="8"/>
             <Spinner fx:id="energyCostToMoveSpinner" editable="true" GridPane.columnIndex="3" GridPane.rowIndex="8"/>
 
-            <!-- Reproduction and Mutation specifications -->
-            <Label text="Reproduction and Mutation specifications" style="-fx-font-weight: bold;"
-                   GridPane.columnIndex="2" GridPane.rowIndex="10" GridPane.columnSpan="2"/>
+            <Label text="Reproduction and Mutation" style="-fx-font-weight: bold;"
+                   GridPane.columnIndex="2" GridPane.rowIndex="10" GridPane.columnSpan="2"/> <!-- Updated text -->
 
             <Label text="Genotype Size:" GridPane.columnIndex="2" GridPane.rowIndex="11"/>
             <Spinner fx:id="genotypeSizeSpinner" editable="true" GridPane.columnIndex="3" GridPane.rowIndex="11"/>
@@ -84,7 +82,7 @@
             <Label text="Energy Needed to Reproduce:" GridPane.columnIndex="2" GridPane.rowIndex="12"/>
             <Spinner fx:id="energyNeededToReproduceSpinner" editable="true" GridPane.columnIndex="3" GridPane.rowIndex="12"/>
 
-            <Label text="Energy to Pass to Child:" GridPane.columnIndex="2" GridPane.rowIndex="13"/>
+            <Label text="Energy Passed to Child:" GridPane.columnIndex="2" GridPane.rowIndex="13"/> <!-- Updated text -->
             <Spinner fx:id="energyToPassToChildSpinner" editable="true" GridPane.columnIndex="3" GridPane.rowIndex="13"/>
 
             <Label text="Minimum Mutations:" GridPane.columnIndex="2" GridPane.rowIndex="14"/>
@@ -93,13 +91,14 @@
             <Label text="Maximum Mutations:" GridPane.columnIndex="2" GridPane.rowIndex="15"/>
             <Spinner fx:id="maximumNumberOfMutationsSpinner" editable="true" GridPane.columnIndex="3" GridPane.rowIndex="15"/>
 
+            <!-- Controls spanning multiple columns or in separate rows -->
             <CheckBox fx:id="saveStatistics" text="Save Statistics"
                       GridPane.columnIndex="0" GridPane.rowIndex="14" GridPane.columnSpan="2"/>
 
-            <!-- Cancel and Save Buttons -->
-            <HBox spacing="10" alignment="CENTER_LEFT" GridPane.columnIndex="0" GridPane.rowIndex="15" GridPane.columnSpan="2">
-                <Button text="Cancel" onAction="#handleCancel"/>
-                <Button text="Save" onAction="#handleSave" defaultButton="true"/>
+            <HBox spacing="10" alignment="CENTER_LEFT" GridPane.columnIndex="0" GridPane.rowIndex="16" GridPane.columnSpan="2"> <!-- Adjusted row index -->
+                <!-- Added fx:id to buttons -->
+                <Button fx:id="cancelButton" text="Cancel" onAction="#handleCancel"/>
+                <Button fx:id="saveButton" text="Save" onAction="#handleSave" defaultButton="true"/>
             </HBox>
         </GridPane>
     </VBox>
