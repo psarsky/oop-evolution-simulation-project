@@ -3,7 +3,7 @@
 // ============================================================
 package proj;
 
-import proj.app.SimulationController; // Import the controller
+import proj.app.SimulationEngine; // Import the controller
 import proj.model.elements.Animal; // Import Animal for listener
 import proj.model.genotype.Mutation;
 import proj.model.genotype.MutationVariant;
@@ -73,16 +73,16 @@ public class World {
         Simulation simulation = createSimulationInstance(simulationProperties);
 
         // 2. Create the SimulationController to manage execution
-        SimulationController simulationController = new SimulationController(simulation, simulationProperties);
+        SimulationEngine simulationEngine = new SimulationEngine(simulation, simulationProperties);
 
         // 3. Optional: Add a simple console output listener for day ends
         addConsoleDayEndListener(simulation, simulationProperties); // Pass simulationProperties if needed elsewhere by listener
 
         // 4. Start the simulation via the controller (runs in a background thread)
-        simulationController.start();
+        simulationEngine.start();
 
         // 5. Wait for the simulation thread to complete its execution
-        simulationController.waitUntilFinished();
+        simulationEngine.waitUntilFinished();
 
         // 6. Simulation finished
         System.out.println("STOP Console Simulation");

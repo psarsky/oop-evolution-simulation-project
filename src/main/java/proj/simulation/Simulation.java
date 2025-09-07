@@ -4,6 +4,7 @@
 
 package proj.simulation;
 
+import proj.app.SimulationEngine;
 import proj.model.elements.Animal;
 import proj.model.elements.ElementType;
 import proj.model.elements.WorldElement;
@@ -30,7 +31,7 @@ import java.util.*;
  * </p><p>
  * **Note:** This class defines *what* happens in the simulation but not *how* it is executed.
  * The execution loop, timing, and lifecycle (start/stop/pause) are managed externally,
- * typically by a {@link proj.app.SimulationController}.
+ * typically by a {@link SimulationEngine}.
  * </p>
  */
 public class Simulation {
@@ -142,7 +143,7 @@ public class Simulation {
 
     /**
      * Executes all simulation logic for a single day (or step).
-     * This is the core method called repeatedly by the {@link proj.app.SimulationController}.
+     * This is the core method called repeatedly by the {@link SimulationEngine}.
      * It orchestrates the daily sequence: removing the dead, updating the environment (plants/water),
      * moving animals, handling consumption (eating), and handling reproduction. Finally, it increments
      * the internal day counter and notifies any registered day-end listeners.

@@ -2,88 +2,100 @@ package proj.app.viewmodels;
 
 import javafx.beans.property.*;
 import proj.app.GenotypeFormatter;
+import proj.app.services.IMessageService; // Import serwisu wiadomości
 import proj.model.elements.Animal;
+import java.util.Objects;
 
 /**
- * ViewModel responsible for holding and exposing the details of the currently selected {@link Animal}
- * in the simulation UI. It uses JavaFX properties for easy binding with UI labels and other controls
- * in the "Selected Animal" panel.
+ * ViewModel odpowiedzialny za przechowywanie i udostępnianie szczegółów
+ * aktualnie wybranego {@link Animal} w interfejsie użytkownika symulacji.
+ * Używa właściwości JavaFX do łatwego powiązania z etykietami i innymi kontrolkami
+ * w panelu "Selected Animal". Używa {@link IMessageService} do pobierania placeholderów.
  */
 public class SelectedAnimalViewModel {
 
-    // --- Properties for Selected Animal Details ---
-    // Use ReadOnly*Wrapper for internal modification, expose ReadOnly*Property for external binding.
+    private final IMessageService messageService; // Serwis wiadomości
+    private final String placeholder; // Przechowywany placeholder
+
+    // --- Właściwości do powiązania z UI ---
     private final ReadOnlyIntegerWrapper energy = new ReadOnlyIntegerWrapper(0);
     private final ReadOnlyIntegerWrapper age = new ReadOnlyIntegerWrapper(0);
     private final ReadOnlyIntegerWrapper childrenMade = new ReadOnlyIntegerWrapper(0);
     private final ReadOnlyIntegerWrapper plantsEaten = new ReadOnlyIntegerWrapper(0);
-    private final ReadOnlyStringWrapper genotype = new ReadOnlyStringWrapper("-");
-    private final ReadOnlyIntegerWrapper activeGeneIndex = new ReadOnlyIntegerWrapper(0); // Assuming 0 is a valid default index
+    private final ReadOnlyStringWrapper genotype; // Inicjalizowany w konstruktorze
+    private final ReadOnlyIntegerWrapper activeGeneIndex = new ReadOnlyIntegerWrapper(0);
     private final ReadOnlyIntegerWrapper descendantsCount = new ReadOnlyIntegerWrapper(0);
-    private final ReadOnlyStringWrapper deathDate = new ReadOnlyStringWrapper("-"); // "-" indicates alive or not set
-    private final ReadOnlyBooleanWrapper isSelected = new ReadOnlyBooleanWrapper(false); // Tracks if an animal is currently selected
+    private final ReadOnlyStringWrapper deathDate; // Inicjalizowany w konstruktorze
+    private final ReadOnlyBooleanWrapper isSelected = new ReadOnlyBooleanWrapper(false);
 
-    // Reference to the actual Animal object currently displayed. Null if none selected.
+    // Referencja do aktualnie wyświetlanego obiektu Animal
     private Animal currentAnimalReference = null;
 
-    // --- Public Methods ---
+    /**
+     * Konstruuje SelectedAnimalViewModel.
+     * @param messageService Serwis do pobierania zlokalizowanych wiadomości (np. placeholderów). Nie może być null.
+     */
+    public SelectedAnimalViewModel(IMessageService messageService) {
+        this.messageService = Objects.requireNonNull(messageService, "MessageService cannot be null");
+        this.placeholder = messageService.getMessage("placeholder.selected.none"); // Pobierz placeholder raz
+
+        // Inicjalizuj właściwości StringWrapper z placeholderem
+        this.genotype = new ReadOnlyStringWrapper(placeholder);
+        this.deathDate = new ReadOnlyStringWrapper(placeholder);
+
+        clear(); // Ustaw początkowe wartości liczbowe na 0, a tekstowe na placeholder
+    }
 
     /**
-     * Updates the ViewModel with the data from the provided {@link Animal}.
-     * If the provided animal is null, it clears the ViewModel using {@link #clear()}.
+     * Aktualizuje ViewModel danymi z dostarczonego {@link Animal}.
+     * Jeśli przekazane zwierzę jest null, czyści ViewModel.
      *
-     * @param animal The {@link Animal} whose data should be displayed, or {@code null} to clear the selection.
+     * @param animal Zwierzę {@link Animal}, którego dane mają być wyświetlone, lub {@code null} do wyczyszczenia wyboru.
      */
     public void update(Animal animal) {
         if (animal != null) {
-            // Update properties with data from the animal
             energy.set(animal.getEnergy());
             age.set(animal.getAge());
             childrenMade.set(animal.getChildrenMade());
             plantsEaten.set(animal.getPlantsEaten());
             genotype.set(GenotypeFormatter.formatGenotype(animal.getGenes()));
             activeGeneIndex.set(animal.getActiveGeneIndex());
-            descendantsCount.set(animal.getDescendantsCount()); // Ensure Animal calculates this efficiently if needed often
-            deathDate.set(animal.isAlive() ? "-" : String.valueOf(animal.getDeathDate())); // Show death date if applicable
-            isSelected.set(true); // Mark as selected
-            currentAnimalReference = animal; // Store the reference
+            descendantsCount.set(animal.getDescendantsCount());
+            // Ustaw datę śmierci lub placeholder, jeśli zwierzę żyje
+            deathDate.set(animal.isAlive() ? placeholder : String.valueOf(animal.getDeathDate()));
+            isSelected.set(true); // Oznacz jako wybrane
+            currentAnimalReference = animal; // Zapisz referencję
         } else {
-            // If null animal is passed, clear the selection
-            clear();
+            clear(); // Wyczyść, jeśli przekazano null
         }
     }
 
     /**
-     * Clears the ViewModel, resetting all properties to their default/empty state.
-     * Typically called when no animal is selected or the previously selected animal is deselected or removed.
+     * Czyści ViewModel, resetując wszystkie właściwości do wartości domyślnych/pustych (używając placeholdera).
      */
     public void clear() {
         energy.set(0);
         age.set(0);
         childrenMade.set(0);
         plantsEaten.set(0);
-        genotype.set("-");
-        activeGeneIndex.set(0);
+        genotype.set(placeholder); // Użyj zapamiętanego placeholdera
+        activeGeneIndex.set(0); // 0 jest zazwyczaj bezpieczną wartością domyślną
         descendantsCount.set(0);
-        deathDate.set("-");
-        isSelected.set(false); // Mark as not selected
-        currentAnimalReference = null; // Clear the reference
+        deathDate.set(placeholder); // Użyj zapamiętanego placeholdera
+        isSelected.set(false); // Oznacz jako niewybrane
+        currentAnimalReference = null; // Wyczyść referencję
     }
 
     /**
-     * Gets the reference to the actual {@link Animal} object currently represented by this ViewModel.
-     * Returns {@code null} if no animal is currently selected. This reference can be used by other
-     * components (like {@link proj.app.state.SimulationStateProducer} or
-     * {@link proj.app.controllers.SimulationWindowController}) to identify the selected animal.
-     *
-     * @return The reference to the currently selected {@link Animal}, or {@code null}.
+     * Pobiera referencję do aktualnego obiektu {@link Animal} reprezentowanego przez ten ViewModel.
+     * Zwraca {@code null}, jeśli żadne zwierzę nie jest aktualnie wybrane.
+     * @return Referencja do wybranego {@link Animal} lub {@code null}.
      */
     public Animal getCurrentAnimalReference() {
         return currentAnimalReference;
     }
 
-    // --- ReadOnly Property Getters (for JavaFX binding) ---
-    // Expose only the ReadOnly properties to prevent external modification of the ViewModel's state directly.
+    // --- Gettery ReadOnly Property (do powiązania z JavaFX UI) ---
     public ReadOnlyIntegerProperty energyProperty() { return energy.getReadOnlyProperty(); }
     public ReadOnlyIntegerProperty ageProperty() { return age.getReadOnlyProperty(); }
     public ReadOnlyIntegerProperty childrenMadeProperty() { return childrenMade.getReadOnlyProperty(); }

@@ -4,10 +4,14 @@ import com.google.gson.Gson;
 import javafx.scene.canvas.Canvas;
 import javafx.stage.Window;
 import proj.app.render.MapRenderer;
+import proj.app.services.IAlertService;
 import proj.app.services.IFileSaveService;
+import proj.app.services.IMessageService; // Dodano import messageService
 import proj.app.services.JavaFXFileSaveService;
+import proj.app.state.SimulationRenderSnapshot; // Import nowego typu migawki
 import proj.app.state.SimulationStateProducer;
 import proj.app.state.SimulationStateQueue;
+import proj.app.statistics.StatisticsCalculator; // Import kalkulatora
 import proj.app.viewmodels.SelectedAnimalViewModel;
 import proj.simulation.Simulation;
 import proj.simulation.SimulationProperties;
@@ -15,41 +19,40 @@ import proj.simulation.SimulationProperties;
 import java.util.Objects;
 
 /**
- * Responsible for creating and initializing all the core components
- * required to run and manage a single simulation instance within the UI context.
- * It encapsulates the setup complexity and injects dependencies like Gson into the
- * components it creates.
+ * Odpowiada za tworzenie i inicjalizację wszystkich kluczowych komponentów
+ * wymaganych do uruchomienia i zarządzania pojedynczą instancją symulacji
+ * w kontekście interfejsu użytkownika. Hermetyzuje złożoność konfiguracji
+ * i wstrzykuje zależności (jak Gson, IAlertService) do tworzonych komponentów.
  */
 public class SimulationInitializer {
 
-    private static final int MAX_STATE_QUEUE_SIZE = 5;
-    private final Gson gson; // Injected dependency
+    private final Gson gson;
+    private final IAlertService alertService;
+    private final IMessageService messageService; // Dodano messageService
 
     /**
-     * Constructs a SimulationInitializer.
+     * Konstruuje SimulationInitializer.
      *
-     * @param gson The {@link Gson} instance to be injected into components created
-     *             during initialization (e.g., {@link StatisticsManager}). Must not be null.
-     * @throws NullPointerException if gson is null.
+     * @param gson         Instancja {@link Gson}. Nie może być null.
+     * @param alertService Instancja {@link IAlertService}. Nie może być null.
+     * @param messageService Instancja {@link IMessageService}. Nie może być null.
+     * @throws NullPointerException jeśli którykolwiek argument jest null.
      */
-    public SimulationInitializer(Gson gson) {
+    public SimulationInitializer(Gson gson, IAlertService alertService, IMessageService messageService) { // Dodano messageService
         this.gson = Objects.requireNonNull(gson, "Gson instance cannot be null");
+        this.alertService = Objects.requireNonNull(alertService, "AlertService cannot be null");
+        this.messageService = Objects.requireNonNull(messageService, "MessageService cannot be null"); // Zapisz messageService
     }
 
     /**
-     * Creates and configures all core simulation components based on the provided configuration
-     * and UI context. This includes the simulation logic, controller, state management,
-     * statistics, rendering, and necessary services.
+     * Tworzy i konfiguruje wszystkie podstawowe komponenty symulacji.
      *
-     * @param config                 The {@link SimulationProperties} object defining the simulation's parameters. Must not be null.
-     * @param canvas                 The JavaFX {@link Canvas} element where the simulation will be rendered. Must not be null.
-     * @param ownerWindow            The parent JavaFX {@link Window} (typically a Stage) used for context-dependent services
-     *                               like file choosers ({@link JavaFXFileSaveService}). Must not be null.
-     * @param selectedAnimalViewModel The {@link SelectedAnimalViewModel} instance that tracks the user's animal selection
-     *                                and is used by the {@link SimulationStateProducer}. Must not be null.
-     * @return A {@link SimulationComponents} record containing references to all the newly created and configured
-     *         core simulation components (Simulation, SimulationController, StatisticsManager, etc.).
-     * @throws NullPointerException if any of the non-nullable parameters (config, canvas, ownerWindow, selectedAnimalViewModel) are null.
+     * @param config                 {@link SimulationProperties}. Nie może być null.
+     * @param canvas                 {@link Canvas} do renderowania. Nie może być null.
+     * @param ownerWindow            Nadrzędne {@link Window}. Nie może być null.
+     * @param selectedAnimalViewModel {@link SelectedAnimalViewModel}. Nie może być null.
+     * @return Rekord {@link SimulationComponents} z utworzonymi komponentami.
+     * @throws NullPointerException jeśli którykolwiek argument non-null jest null.
      */
     public SimulationComponents initializeSimulationComponents(
             SimulationProperties config,
@@ -62,29 +65,35 @@ public class SimulationInitializer {
         Objects.requireNonNull(ownerWindow, "Owner Window cannot be null");
         Objects.requireNonNull(selectedAnimalViewModel, "SelectedAnimalViewModel cannot be null");
 
-        // Create context-specific service requiring the owner window
         IFileSaveService fileSaveService = new JavaFXFileSaveService(ownerWindow);
-
-        // Create core simulation logic
         Simulation simulation = SimulationFactory.createSimulation(config);
-        SimulationController simulationController = new SimulationController(simulation, config);
+        SimulationEngine simulationEngine = new SimulationEngine(simulation, config);
 
-        // Create state and statistics components
-        SimulationStateQueue stateQueue = new SimulationStateQueue(MAX_STATE_QUEUE_SIZE);
-        // Inject the fileSaveService and the injected Gson instance into StatisticsManager
-        StatisticsManager statisticsManager = new StatisticsManager(simulation, config, fileSaveService, this.gson);
-        SimulationStateProducer stateProducer = new SimulationStateProducer(simulation, stateQueue, statisticsManager, selectedAnimalViewModel);
+        // --- Inicjalizacja zrefaktoryzowanych komponentów statystyk i stanu ---
+        StatisticsCalculator statisticsCalculator = new StatisticsCalculator();
+        // Utwórz kolejkę dla migawek renderowania
+        SimulationStateQueue<SimulationRenderSnapshot> stateQueue =
+                new SimulationStateQueue<>(AppConstants.MAX_STATE_QUEUE_SIZE);
+        // Utwórz manager statystyk, wstrzykując kalkulator, alertService i messageService
+        StatisticsManager statisticsManager = new StatisticsManager(
+                simulation, config, fileSaveService, this.gson,
+                statisticsCalculator, this.alertService, this.messageService // Przekaż messageService
+        );
+        // Utwórz producenta stanu renderowania
+        SimulationStateProducer stateProducer = new SimulationStateProducer(
+                simulation, stateQueue, statisticsManager, selectedAnimalViewModel
+        );
 
-        // Create UI rendering component
+        // Utwórz renderer mapy
         MapRenderer mapRenderer = new MapRenderer(canvas, config);
 
-        // Package and return the components
+        // Zwróć wszystkie komponenty
         return new SimulationComponents(
                 simulation,
-                simulationController,
-                statisticsManager,
-                stateProducer,
-                stateQueue,
+                simulationEngine,
+                statisticsManager, // Zrefaktoryzowany manager
+                stateProducer,     // Zaktualizowany producent
+                stateQueue,        // Kolejka typu SimulationRenderSnapshot
                 mapRenderer
         );
     }

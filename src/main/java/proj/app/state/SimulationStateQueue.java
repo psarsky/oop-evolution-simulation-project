@@ -2,94 +2,98 @@ package proj.app.state;
 
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.TimeUnit;
+import java.util.Objects; // Dodano dla Objects.requireNonNull
 
 /**
- * A thread-safe, bounded, double-ended queue (deque) designed to hold {@link SimulationStateSnapshot} objects.
- * It acts as a buffer between the {@link SimulationStateProducer} thread (which adds snapshots)
- * and the UI rendering thread (which consumes snapshots).
+ * Wątkowo bezpieczna, ograniczona, dwukierunkowa kolejka (deque)
+ * przechowująca migawki stanu symulacji (dowolnego typu T, np.
+ * {@link SimulationRenderSnapshot} lub {@link proj.app.SimulationStatisticsSnapshot}).
+ * Działa jako bufor między wątkiem produkującym migawki a wątkiem
+ * konsumującym je (np. wątkiem UI).
  * <p>
- * When the queue is full, adding a new element (enqueue) causes the oldest element (at the head) to be dropped.
- * Elements are consumed (dequeued) from the head in FIFO order.
+ * Gdy kolejka jest pełna, dodanie nowego elementu (enqueue) powoduje
+ * usunięcie najstarszego elementu (z początku kolejki). Elementy są
+ * pobierane (dequeue) z początku kolejki w porządku FIFO.
  * </p>
+ * @param <T> Typ przechowywanych migawek stanu.
  */
-public class SimulationStateQueue {
+public class SimulationStateQueue<T> {
 
-    private final BlockingDeque<SimulationStateSnapshot> stateQueue;
-    private final int maxQueueSize;
+    private final BlockingDeque<T> stateQueue; // Wewnętrzna implementacja kolejki
+    private final int maxQueueSize; // Maksymalny rozmiar kolejki
 
     /**
-     * Constructs a {@code SimulationStateQueue} with a specified maximum capacity.
+     * Konstruuje kolejkę {@code SimulationStateQueue} o określonej maksymalnej pojemności.
      *
-     * @param maxQueueSize The maximum number of snapshots the queue can hold before dropping the oldest. Must be positive.
+     * @param maxQueueSize Maksymalna liczba migawek, jaką kolejka może pomieścić,
+     *                     zanim zacznie usuwać najstarsze. Musi być dodatnia.
+     * @throws IllegalArgumentException jeśli maxQueueSize nie jest dodatnie.
      */
     public SimulationStateQueue(int maxQueueSize) {
         if (maxQueueSize <= 0) {
             throw new IllegalArgumentException("maxQueueSize must be positive");
         }
         this.maxQueueSize = maxQueueSize;
-        // Use LinkedBlockingDeque which implements BlockingDeque interface
+        // Użycie LinkedBlockingDeque jako implementacji BlockingDeque.
         this.stateQueue = new LinkedBlockingDeque<>(maxQueueSize);
     }
 
     /**
-     * Adds a new state snapshot to the tail (end) of the deque.
-     * If the deque is currently full (at max capacity), this operation first removes
-     * the element at the head (oldest snapshot) before adding the new snapshot to the tail.
-     * This is a non-blocking operation.
+     * Dodaje nową migawkę stanu na koniec kolejki.
+     * Jeśli kolejka jest pełna, najpierw usuwa element z początku (najstarszą migawkę),
+     * a następnie dodaje nową migawkę na koniec. Operacja jest nieblokująca.
      *
-     * @param snapshot The {@link SimulationStateSnapshot} to add. If null, the operation is ignored.
+     * @param snapshot Migawka stanu typu T do dodania. Nie może być null.
+     * @throws NullPointerException jeśli snapshot jest null.
      */
-    public void enqueue(SimulationStateSnapshot snapshot) {
-        if (snapshot == null) {
-            return; // Ignore null snapshots
-        }
-        // If the queue is full, pollFirst() removes the head.
-        // This loop ensures space is made *before* adding the new element.
+    public void enqueue(T snapshot) {
+        Objects.requireNonNull(snapshot, "Cannot enqueue a null snapshot");
+        // Pętla zapewniająca zwolnienie miejsca, jeśli kolejka jest pełna.
+        // pollFirst() usuwa element z początku (head).
         while (stateQueue.size() >= maxQueueSize) {
-            stateQueue.pollFirst(); // Remove the oldest element from the head
+            stateQueue.pollFirst(); // Usuń najstarszy element
         }
-        // offerLast adds to the tail, non-blocking, returns false if couldn't add (shouldn't happen here)
+        // offerLast dodaje na koniec (tail), nie blokuje, zwraca false, jeśli się nie uda (tu nie powinno)
         stateQueue.offerLast(snapshot);
     }
 
     /**
-     * Retrieves and removes the state snapshot from the head (beginning) of the deque (FIFO order).
-     * If the deque is empty, this method returns {@code null}.
-     * This is a non-blocking operation.
+     * Pobiera i usuwa migawkę stanu z początku kolejki (porządek FIFO).
+     * Jeśli kolejka jest pusta, metoda zwraca {@code null}.
+     * Operacja jest nieblokująca.
      *
-     * @return The snapshot at the head of the deque, or {@code null} if the deque is empty.
+     * @return Migawka z początku kolejki, lub {@code null}, jeśli kolejka jest pusta.
      */
-    public SimulationStateSnapshot dequeue() {
-        // pollFirst retrieves and removes the head, returns null if empty
+    public T dequeue() {
+        // pollFirst pobiera i usuwa element z początku, zwraca null, jeśli pusta.
         return stateQueue.pollFirst();
     }
 
     /**
-     * Retrieves, but does not remove, the most recently added snapshot (the element at the tail of the deque).
-     * If the deque is empty, this method returns {@code null}.
-     * This can be useful for getting the latest state without consuming it, e.g., for immediate redraws.
+     * Pobiera, ale nie usuwa, ostatnio dodaną migawkę (element na końcu kolejki).
+     * Jeśli kolejka jest pusta, metoda zwraca {@code null}.
+     * Przydatne do podglądu najnowszego stanu bez jego konsumowania.
      *
-     * @return The snapshot at the tail of the deque, or {@code null} if the deque is empty.
+     * @return Migawka z końca kolejki, lub {@code null}, jeśli kolejka jest pusta.
      */
-    public SimulationStateSnapshot peekLast() {
-        // peekLast retrieves but does not remove the tail, returns null if empty
+    public T peekLast() {
+        // peekLast pobiera, ale nie usuwa elementu z końca, zwraca null, jeśli pusta.
         return stateQueue.peekLast();
     }
 
     /**
-     * Checks if the deque currently contains any snapshots.
+     * Sprawdza, czy kolejka zawiera jakiekolwiek migawki.
      *
-     * @return {@code true} if the deque is not empty, {@code false} otherwise.
+     * @return {@code true}, jeśli kolejka nie jest pusta, {@code false} w przeciwnym razie.
      */
     public boolean hasSnapshots() {
         return !stateQueue.isEmpty();
     }
 
     /**
-     * Returns the current number of snapshots in the queue.
+     * Zwraca bieżącą liczbę migawek w kolejce.
      *
-     * @return The number of elements in the queue.
+     * @return Liczba elementów w kolejce.
      */
     public int size() {
         return stateQueue.size();

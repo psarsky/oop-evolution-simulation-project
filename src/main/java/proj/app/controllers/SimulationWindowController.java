@@ -1,705 +1,616 @@
+// Plik: proj/app/controllers/SimulationWindowController.java
 package proj.app.controllers;
 
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
-import javafx.beans.binding.StringBinding;
-import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.fxml.FXML;
+import javafx.scene.Parent; // Import Parent
+import javafx.scene.Scene; // Import Scene
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
+import javafx.scene.layout.GridPane; // **** Import GridPane ****
+import javafx.scene.layout.StackPane; // Import StackPane
+// import javafx.scene.layout.VBox; // Import usunięty (niepotrzebny)
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
-import proj.app.*; // Includes AppConstants
+import proj.app.*; // Zawiera AppConstants
 import proj.app.controllers.handlers.CanvasInteractionHandler;
 import proj.app.render.MapRenderer;
 import proj.app.render.SimulationRenderer;
 import proj.app.services.IAlertService;
-import proj.app.services.IFileSaveService;
-import proj.app.services.IMessageService; // Import message service
+import proj.app.services.IMessageService;
+import proj.app.state.SimulationRenderSnapshot;
 import proj.app.state.SimulationStateProducer;
-import proj.app.state.SimulationStateSnapshot;
+import proj.app.state.SimulationStateQueue;
+import proj.app.SimulationStatisticsSnapshot;
+import proj.app.viewmodels.ChartDataModel; // Import modelu danych wykresu
 import proj.app.viewmodels.SelectedAnimalViewModel;
 import proj.app.viewmodels.StatisticsViewModel;
 import proj.model.elements.Animal;
 import proj.simulation.Simulation;
 import proj.simulation.SimulationProperties;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
- * Controller for the Simulation Window (SimulationWindow.fxml).
- * Coordinates the user interface, delegates simulation initialization, lifecycle management,
- * and rendering to dedicated classes. Manages user interactions (like canvas clicks, button presses)
- * and updates associated ViewModels (StatisticsViewModel, SelectedAnimalViewModel).
- * It registers itself with the {@link ActiveSimulationRegistry} upon start and unregisters upon closing.
- * Required dependencies (services, initializer, registry, message service) are injected via the constructor.
- * Uses messages from {@link IMessageService} and constants from {@link AppConstants}.
+ * Główny kontroler dla okna symulacji (SimulationWindow.fxml).
+ * Koordynuje główny layout, cykl życia symulacji, renderowanie mapy
+ * i interakcje. Deleguje wyświetlanie szczegółowych paneli (statystyki,
+ * wybrane zwierzę, genotypy, kontrolki wykresu, wykres) do zagnieżdżonych
+ * kontrolerów, przekazując im odpowiednie modele danych i zależności.
+ * Używa GridPane do równego rozłożenia paneli statystyk.
  */
 public class SimulationWindowController {
 
-    //<editor-fold desc="FXML Fields">
-    // Define FXML variables matching fx:id attributes in SimulationWindow.fxml
+    //<editor-fold desc="FXML Fields - Główne komponenty okna">
     @FXML private Canvas simulationCanvas;
-    @FXML private ScrollPane canvasScrollPane; // Used for resizing canvas
+    @FXML private ScrollPane canvasScrollPane;
     @FXML private Button playPauseButton;
     @FXML private Slider speedSlider;
     @FXML private Button collectingDataButton;
     @FXML private Button takeSnapshotButton;
-    @FXML private Label dayLabel; // Label preceding day count
-    @FXML private Label dayCount;
-    @FXML private Label animalLabel; // Label preceding animal count
-    @FXML private Label animalCount;
-    @FXML private Label plantLabel; // Label preceding plant count
-    @FXML private Label plantCount;
-    @FXML private Label emptyFieldsLabel; // Label preceding empty fields count
-    @FXML private Label emptyFieldsCount;
-    @FXML private Label avgEnergyLabel; // Label preceding average energy
-    @FXML private Label averageEnergy;
-    @FXML private Label avgLifespanLabel; // Label preceding average lifespan
-    @FXML private Label averageLifespan;
-    @FXML private Label avgChildrenLabel; // Label preceding average children
-    @FXML private Label averageChildren;
-    @FXML private Label popularGenotypesLabel; // Label preceding popular genotypes
-    @FXML private TextArea popularGenotypes;
-    @FXML private Label selectedAnimalEnergyLabel; // Label preceding selected animal energy
-    @FXML private Label selectedAnimalEnergy;
-    @FXML private Label selectedAnimalAgeLabel; // Label preceding selected animal age
-    @FXML private Label selectedAnimalAge;
-    @FXML private Label selectedAnimalChildrenLabel; // Label preceding selected animal children
-    @FXML private Label selectedAnimalChildren;
-    @FXML private Label selectedAnimalPlantsEatenLabel; // Label preceding selected animal plants eaten
-    @FXML private Label selectedAnimalPlantsEaten;
-    @FXML private Label selectedAnimalGenotypeLabel; // Label preceding selected animal genotype
-    @FXML private Label selectedAnimalGenotype;
-    @FXML private Label selectedAnimalActiveGeneLabel; // Label preceding selected animal active gene
-    @FXML private Label selectedAnimalActiveGene;
-    @FXML private Label selectedAnimalDescendantsLabel; // Label preceding selected animal descendants
-    @FXML private Label selectedAnimalDescendants;
-    @FXML private Label selectedAnimalDeathDateLabel; // Label preceding selected animal death date
-    @FXML private Label selectedAnimalDeathDate;
-    @FXML private CheckBox showStatisticsCheckbox; // Checkbox to toggle statistics panel visibility
-    @FXML private TitledPane currentStatsPane; // TitledPane for current stats
-    @FXML private TitledPane selectedAnimalPane; // TitledPane for selected animal details
+    @FXML private CheckBox showStatisticsCheckbox;
+    @FXML private Label speedLabel;
+    // @FXML private VBox statsVBox; // Zmieniono na GridPane
+    @FXML private GridPane statsGridPane; // **** Nowe pole dla GridPane ****
+    @FXML private SplitPane mainSplitPane;
+    @FXML private StackPane chartPanelContainer;
+    //</editor-fold>
+
+    //<editor-fold desc="FXML Fields - Wstrzyknięte kontrolery paneli">
+    @FXML private StatisticsPanelController statisticsPanelController;
+    @FXML private SelectedAnimalPanelController selectedAnimalPanelController;
+    @FXML private GenotypesPanelController genotypesPanelController;
+    @FXML private ChartControlsPanelController chartControlsPanelController;
+    @FXML private StatisticsChartPanelController chartPanelController;
     //</editor-fold>
 
     //<editor-fold desc="Dependencies (Injected)">
     private final IAlertService alertService;
     private final SimulationInitializer simulationInitializer;
     private final ActiveSimulationRegistry activeSimulationRegistry;
-    private final IMessageService messageService; // Injected message service
+    private final IMessageService messageService;
     //</editor-fold>
 
     //<editor-fold desc="Internal Components & State">
-    private final StatisticsViewModel statisticsViewModel = new StatisticsViewModel();
-    private final SelectedAnimalViewModel selectedAnimalViewModel = new SelectedAnimalViewModel();
+    private StatisticsViewModel statisticsViewModel;
+    private SelectedAnimalViewModel selectedAnimalViewModel;
+    private ChartDataModel chartDataModel;
+
     private SimulationLifecycleManager lifecycleManager;
     private SimulationRenderer simulationRenderer;
     private CanvasInteractionHandler canvasInteractionHandler;
-    private SimulationController simulationController;
+    private SimulationEngine simulationEngine;
     private StatisticsManager statisticsManager;
     private SimulationStateProducer stateProducer;
     private MapRenderer mapRenderer;
     private Simulation simulation;
-    private SimulationStateSnapshot lastProcessedSnapshot = null;
+
+    private SimulationRenderSnapshot lastProcessedSnapshot = null;
     private SimulationProperties simProps;
     private String configName = "UNKNOWN";
     private Stage ownerStage;
     //</editor-fold>
 
     /**
-     * Constructs the SimulationWindowController with injected dependencies.
-     * These dependencies are used throughout the controller's lifecycle for tasks like
-     * displaying alerts, initializing simulation components, managing the window's
-     * registration as an active simulation, and retrieving localized UI text.
-     *
-     * @param alertService            The {@link IAlertService} instance used for displaying alerts and error messages to the user. Must not be null.
-     * @param simulationInitializer   The {@link SimulationInitializer} instance responsible for creating and setting up
-     *                                the core simulation components (Simulation, Controller, StatisticsManager, etc.). Must not be null.
-     * @param activeSimulationRegistry The singleton {@link ActiveSimulationRegistry} instance used to register this simulation window
-     *                                upon start and unregister it upon close, allowing management from the main application window. Must not be null.
-     * @param messageService          The {@link IMessageService} instance used for retrieving localized or configured UI strings
-     *                                (e.g., button text, labels, titles, error messages). Must not be null.
-     * @throws NullPointerException if any injected dependency is null.
+     * Konstruuje SimulationWindowController z wstrzykniętymi zależnościami.
      */
     public SimulationWindowController(IAlertService alertService,
                                       SimulationInitializer simulationInitializer,
                                       ActiveSimulationRegistry activeSimulationRegistry,
-                                      IMessageService messageService) { // Added messageService
+                                      IMessageService messageService) {
         this.alertService = Objects.requireNonNull(alertService, "AlertService cannot be null");
         this.simulationInitializer = Objects.requireNonNull(simulationInitializer, "SimulationInitializer cannot be null");
         this.activeSimulationRegistry = Objects.requireNonNull(activeSimulationRegistry, "ActiveSimulationRegistry cannot be null");
-        this.messageService = Objects.requireNonNull(messageService, "MessageService cannot be null"); // Store message service
+        this.messageService = Objects.requireNonNull(messageService, "MessageService cannot be null");
     }
 
     /**
-     * Initializes the controller after FXML loading and dependency injection.
-     * This method is automatically called by the FXMLLoader. It performs initial UI setup,
-     * such as binding ViewModels to UI elements, setting up action handlers for buttons,
-     * setting initial UI control states, and setting localized text for static UI elements
-     * using the injected {@link IMessageService}. The main simulation setup and start
-     * occurs later in {@link #setupAndRunSimulation(SimulationProperties, Stage)}.
+     * Inicjalizuje kontroler po załadowaniu FXML.
+     * Odpowiada za wstępną konfigurację UI: ustawienie statycznych tekstów,
+     * powiązanie widoczności paneli bocznych i wykresu, dodanie handlerów do przycisków.
      */
     @FXML
     public void initialize() {
-        bindViewModelUIElements(); // Bind dynamic data labels
-        // Setup button actions
+        setInitialUIState();
+        setUIText();
+
+        // Powiąż widoczność GridPane (zamiast VBox) z checkboxem
+        if (statsGridPane != null && showStatisticsCheckbox != null) {
+            statsGridPane.visibleProperty().bind(showStatisticsCheckbox.selectedProperty());
+            statsGridPane.managedProperty().bind(showStatisticsCheckbox.selectedProperty());
+
+            // Nasłuchuj zmian w widoczności GridPane, aby dostosować divider SplitPane
+            statsGridPane.visibleProperty().addListener((obs, oldVal, newVal) -> {
+                if (mainSplitPane != null) {
+                    Platform.runLater(() -> mainSplitPane.setDividerPositions(newVal ? 0.70 : 1.0)); // Dostosuj proporcję 0.70 wg potrzeb
+                }
+            });
+        } else {
+            System.err.println("Warning: Could not bind visibility for stats GridPane or mainSplitPane is null.");
+        }
+
+        // Powiąż widoczność kontenera wykresu (dolny panel) z tym samym checkboxem (bez zmian)
+        if (chartPanelContainer != null && showStatisticsCheckbox != null) {
+            chartPanelContainer.visibleProperty().bind(showStatisticsCheckbox.selectedProperty());
+            chartPanelContainer.managedProperty().bind(showStatisticsCheckbox.selectedProperty());
+            chartPanelContainer.minHeightProperty().bind(
+                    Bindings.when(showStatisticsCheckbox.selectedProperty())
+                            .then(150).otherwise(0)
+            );
+            chartPanelContainer.prefHeightProperty().bind(
+                    Bindings.when(showStatisticsCheckbox.selectedProperty())
+                            .then(250).otherwise(0)
+            );
+        } else {
+            System.err.println("Warning: Could not bind visibility/height for chartPanelContainer.");
+        }
+
+        // Dodaj obsługę zdarzeń do głównych przycisków (bez zmian)
         playPauseButton.setOnAction(event -> handlePlayPause());
         collectingDataButton.setOnAction(event -> handleToggleDataCollection());
         takeSnapshotButton.setOnAction(event -> handleTakeSnapshot());
-        // Set initial state for controls (mostly disabled until simulation runs)
-        setInitialUIState();
-        // Set localized text for static elements
-        setUIText();
     }
 
-    /** Sets the initial disabled/text state for UI controls before the simulation starts. */
+    /** Ustawia początkowy stan kontrolek UI (np. wyłączenie przycisków). */
     private void setInitialUIState() {
-        // Buttons/Slider enabled state is handled by binding to lifecycleManager later
         playPauseButton.setDisable(true);
         speedSlider.setDisable(true);
-        // Set initial text using message service for consistency, even if disabled
-        collectingDataButton.setText(messageService.getMessage("sim.button.logDataError")); // Indicates state unknown
+        collectingDataButton.setText(messageService.getMessage("sim.button.logDataError"));
         collectingDataButton.setDisable(true);
         takeSnapshotButton.setDisable(true);
     }
 
-    /** Sets static text elements (labels, button text) using the injected MessageService. */
+    /** Ustawia statyczne teksty elementów UI pozostających w tym kontrolerze. */
     private void setUIText() {
-        // Set text for labels using keys from messages.properties
-        dayLabel.setText(messageService.getMessage("sim.label.day"));
-        animalLabel.setText(messageService.getMessage("sim.label.animals"));
-        plantLabel.setText(messageService.getMessage("sim.label.plants"));
-        emptyFieldsLabel.setText(messageService.getMessage("sim.label.emptyFields"));
-        avgEnergyLabel.setText(messageService.getMessage("sim.label.avgEnergy"));
-        avgLifespanLabel.setText(messageService.getMessage("sim.label.avgLifespan"));
-        avgChildrenLabel.setText(messageService.getMessage("sim.label.avgChildren"));
-        popularGenotypesLabel.setText(messageService.getMessage("sim.label.popularGenotypes"));
-
-        selectedAnimalEnergyLabel.setText(messageService.getMessage("sim.label.selected.energy"));
-        selectedAnimalAgeLabel.setText(messageService.getMessage("sim.label.selected.age"));
-        selectedAnimalChildrenLabel.setText(messageService.getMessage("sim.label.selected.children"));
-        selectedAnimalPlantsEatenLabel.setText(messageService.getMessage("sim.label.selected.plantsEaten"));
-        selectedAnimalGenotypeLabel.setText(messageService.getMessage("sim.label.selected.genotype"));
-        selectedAnimalActiveGeneLabel.setText(messageService.getMessage("sim.label.selected.activeGene"));
-        selectedAnimalDescendantsLabel.setText(messageService.getMessage("sim.label.selected.descendants"));
-        selectedAnimalDeathDateLabel.setText(messageService.getMessage("sim.label.selected.deathDate"));
-
-        // Set text for controls where it's static or initialized here
+        speedLabel.setText(messageService.getMessage("sim.label.speed"));
         showStatisticsCheckbox.setText(messageService.getMessage("sim.checkbox.showStats"));
         takeSnapshotButton.setText(messageService.getMessage("sim.button.takeSnapshot"));
-        // Note: playPauseButton and collectingDataButton text is dynamic, set via bindings/updates
-
-        // Set TitledPane text
-        currentStatsPane.setText(messageService.getMessage("sim.titledPane.currentStats"));
-        selectedAnimalPane.setText(messageService.getMessage("sim.titledPane.selectedAnimal"));
     }
 
     /**
-     * Configures and starts the simulation display and logic. This method should be called
-     * externally (e.g., by {@link MainWindowController}) after the controller is instantiated,
-     * the FXML is loaded, and the {@link Stage} is available.
-     * It uses the injected {@link SimulationInitializer} to create core components, sets up
-     * UI managers (like {@link SimulationLifecycleManager}, {@link SimulationRenderer},
-     * {@link CanvasInteractionHandler}), configures listeners for simulation events and window closing,
-     * registers this instance with the injected {@link ActiveSimulationRegistry}, updates the window title
-     * using the injected {@link IMessageService}, and starts the necessary background threads and the rendering loop.
+     * Konfiguruje i uruchamia wyświetlanie oraz logikę symulacji.
+     * Tworzy ViewModels i model danych wykresu, przekazuje je do zagnieżdżonych kontrolerów,
+     * inicjalizuje komponenty symulacji i stosuje arkusz stylów CSS.
      *
-     * @param config      The {@link SimulationProperties} object defining the parameters for this specific simulation run. Must not be null.
-     * @param ownerStage  The {@link Stage} hosting this controller's scene. Used for dialog ownership, context, registration, and title setting. Must not be null.
-     * @throws NullPointerException if config or ownerStage is null.
-     * @throws RuntimeException if the initialization process fails at any step (e.g., component creation, thread start),
-     *                          encapsulating the original exception cause. Errors are also shown via the injected alert service.
+     * @param config            Właściwości konfiguracyjne symulacji.
+     * @param ownerStage        Główne okno (Stage) tej instancji symulacji.
+     * @param simulationRunName Nazwa nadana temu konkretnemu uruchomieniu symulacji.
      */
-    public void setupAndRunSimulation(SimulationProperties config, Stage ownerStage) {
+    public void setupAndRunSimulation(SimulationProperties config, Stage ownerStage, String simulationRunName) { // <-- Dodano trzeci parametr
         this.simProps = Objects.requireNonNull(config, "SimulationProperties cannot be null");
         this.ownerStage = Objects.requireNonNull(ownerStage, "Owner Stage cannot be null");
         this.configName = config.getConfigName();
 
-        // Update window title using format string from message service
-        // Assumes the title initially set by MainWindowController has the run name first.
-        String currentTitle = ownerStage.getTitle();
-        String runName = currentTitle != null ? currentTitle.split(" - ")[0] : "Simulation"; // Extract run name or use default
-        ownerStage.setTitle(messageService.getFormattedMessage("simulation.window.title.format", runName, this.configName));
+        // Aktualizacja tytułu okna - użyj przekazanej nazwy uruchomienia
+        ownerStage.setTitle(messageService.getFormattedMessage(
+                "simulation.window.title.format",
+                Objects.requireNonNullElse(simulationRunName, "Simulation"), // Użyj przekazanej nazwy, fallback "Simulation"
+                this.configName
+        ));
+
 
         try {
-            // 1. Initialize components using injected initializer
+            // --- Tworzenie ViewModeli i Modeli ---
+            statisticsViewModel = new StatisticsViewModel(messageService);
+            selectedAnimalViewModel = new SelectedAnimalViewModel(messageService);
+            chartDataModel = new ChartDataModel();
+
+            // --- Inicjalizacja komponentów symulacji ---
             SimulationComponents components = simulationInitializer.initializeSimulationComponents(
                     config, simulationCanvas, ownerStage, selectedAnimalViewModel
             );
             this.simulation = components.simulation();
-            this.simulationController = components.simulationController();
+            this.simulationEngine = components.simulationEngine();
             this.statisticsManager = components.statisticsManager();
             this.stateProducer = components.stateProducer();
             this.mapRenderer = components.mapRenderer();
+            SimulationStateQueue<SimulationRenderSnapshot> stateQueue = components.stateQueue();
 
-            // 2. Create UI managing components
-            this.lifecycleManager = new SimulationLifecycleManager(simulationController, config);
+            // --- Tworzenie menedżerów UI ---
+            this.lifecycleManager = new SimulationLifecycleManager(simulationEngine, config);
             this.simulationRenderer = new SimulationRenderer(
-                    components.stateQueue(), this.mapRenderer, this::processRenderedSnapshot
+                    stateQueue, this.mapRenderer, this::processRenderedSnapshot
             );
 
-            // 3. Configure canvas interaction handler
+            // --- Konfiguracja handlera interakcji z płótnem ---
             this.canvasInteractionHandler = new CanvasInteractionHandler(
-                    simulationCanvas, this.mapRenderer, this.simulation, this.selectedAnimalViewModel
+                    simulationCanvas, this.mapRenderer, this.simulation,
+                    this.selectedAnimalViewModel, this.alertService, this.messageService
             );
             this.canvasInteractionHandler.attachHandlers();
 
-            // 4. Setup UI bindings & responsiveness
-            bindLifecycleControls(); // Includes dynamic button text
-            setupCanvasResponsiveness();
+            // --- Inicjalizacja zagnieżdżonych kontrolerów ---
+            if (statisticsPanelController == null) throw new IllegalStateException("StatisticsPanelController not injected.");
+            statisticsPanelController.initializeController(this.statisticsViewModel, this.messageService);
 
-            // 5. Setup listeners (simulation day end, window close)
+            if (selectedAnimalPanelController == null) throw new IllegalStateException("SelectedAnimalPanelController not injected.");
+            selectedAnimalPanelController.initializeController(this.selectedAnimalViewModel, this.messageService);
+
+            if (genotypesPanelController == null) throw new IllegalStateException("GenotypesPanelController not injected.");
+            genotypesPanelController.initializeController(this.statisticsViewModel, this.messageService);
+
+            if (chartPanelController == null) throw new IllegalStateException("StatisticsChartPanelController not injected.");
+            chartPanelController.initializeController(this.chartDataModel, this.messageService);
+
+            if (chartControlsPanelController == null) throw new IllegalStateException("ChartControlsPanelController not injected.");
+            chartControlsPanelController.initializeController(this.chartPanelController, this.messageService);
+
+            // --- Konfiguracja Sceny i CSS ---
+            Scene scene = ownerStage.getScene();
+            if (scene == null) { throw new IllegalStateException("Scene not found on owner stage. Cannot apply CSS."); }
+            String cssPath = "/css/simulation-styles.css";
+            try {
+                String cssUrl = getClass().getResource(cssPath).toExternalForm();
+                if (!scene.getStylesheets().contains(cssUrl)) {
+                    scene.getStylesheets().add(cssUrl);
+                    System.out.println("Applied CSS: " + cssPath);
+                }
+            } catch (NullPointerException e) {
+                System.err.println("Warning: Could not load CSS file: " + cssPath + ". Styles may be missing.");
+            } catch (Exception e) {
+                System.err.println("Error applying CSS file " + cssPath + ": " + e.getMessage());
+                e.printStackTrace();
+            }
+
+            // --- Ustawienie powiązań UI i responsywności ---
+            bindLifecycleControls();
+            setupCanvasResponsiveness(); // Setup canvas responsiveness AFTER mapRenderer is initialized
+
+            // --- Ustawienie nasłuchiwaczy ---
             setupDayEndListener();
             setupWindowCloseHandler(ownerStage);
 
-            // 6. Register with injected registry
+            // --- Rejestracja w ActiveSimulationRegistry ---
             this.activeSimulationRegistry.register(this.configName, this, this.ownerStage);
 
-            // 7. Start background threads and rendering
+            // --- Uruchomienie wątków tła i renderowania ---
             startBackgroundThreads();
             simulationRenderer.start();
-            simulationController.start(); // Start the main simulation logic thread
+            simulationEngine.start();
 
-            // 8. Final UI setup (enable buttons, set initial text for dynamic buttons)
-            updateCollectingDataButtonText(); // Set initial text based on state
-            collectingDataButton.setDisable(false); // Enable now that manager exists
-            takeSnapshotButton.setDisable(false); // Enable snapshot button
+            // --- Końcowa konfiguracja UI ---
+            updateCollectingDataButtonText();
+            collectingDataButton.setDisable(false);
+            takeSnapshotButton.setDisable(false);
 
-            // 9. Draw the initial state of the map
+            // --- Narysuj początkowy stan mapy ---
             Platform.runLater(this::drawInitialMapState);
 
         } catch (Exception e) {
-            // Use message service for error formatting
             alertService.showAlert(IAlertService.AlertType.ERROR,
                     messageService.getMessage("error.title"),
                     messageService.getFormattedMessage("error.sim.init", e.getMessage()));
             e.printStackTrace();
-            shutdownUI(); // Attempt to disable UI elements
-            // Attempt to unregister if registration occurred before the error
-            this.activeSimulationRegistry.unregister(this.configName, this);
-            throw new RuntimeException("Simulation initialization failed", e); // Re-throw for calling code
+            shutdownUI();
+            // W przypadku błędu inicjalizacji, wyrejestruj się i zamknij okno
+            this.activeSimulationRegistry.unregister(this.configName, this); // Wyrejestruj się
+            if (ownerStage != null && ownerStage.isShowing()) {
+                ownerStage.close();
+            }
         }
     }
 
-    // --- Setup Helper Methods ---
-
-    /** Binds dynamic UI labels to properties in the ViewModels. */
-    private void bindViewModelUIElements() {
-        // Bind statistic value labels
-        dayCount.textProperty().bind(statisticsViewModel.dayCountProperty().asString("%d"));
-        animalCount.textProperty().bind(statisticsViewModel.animalCountProperty().asString("%d"));
-        plantCount.textProperty().bind(statisticsViewModel.plantCountProperty().asString("%d"));
-        emptyFieldsCount.textProperty().bind(statisticsViewModel.emptyFieldsCountProperty().asString("%d"));
-        averageEnergy.textProperty().bind(statisticsViewModel.averageEnergyProperty().asString("%.1f"));
-        averageLifespan.textProperty().bind(statisticsViewModel.averageLifespanProperty().asString("%.1f " + messageService.getMessage("unit.days"))); // Add localized unit
-        averageChildren.textProperty().bind(statisticsViewModel.averageChildrenProperty().asString("%.2f"));
-        popularGenotypes.textProperty().bind(statisticsViewModel.popularGenotypesTextProperty());
-        Tooltip genotypesTooltip = new Tooltip(); // Tooltip for genotypes text area
-        genotypesTooltip.textProperty().bind(statisticsViewModel.popularGenotypesTextProperty());
-        Tooltip.install(popularGenotypes, genotypesTooltip);
-        popularGenotypes.setEditable(false);
-        popularGenotypes.setWrapText(true);
-
-        // Bind selected animal detail labels using helper method for formatting
-        selectedAnimalEnergy.textProperty().bind(createSelectedAnimalBinding(selectedAnimalViewModel.energyProperty()));
-        selectedAnimalAge.textProperty().bind(createSelectedAnimalBinding(selectedAnimalViewModel.ageProperty(), "unit.days")); // Use key for suffix
-        selectedAnimalChildren.textProperty().bind(createSelectedAnimalBinding(selectedAnimalViewModel.childrenMadeProperty()));
-        selectedAnimalPlantsEaten.textProperty().bind(createSelectedAnimalBinding(selectedAnimalViewModel.plantsEatenProperty()));
-        selectedAnimalGenotype.textProperty().bind(selectedAnimalViewModel.genotypeProperty()); // String property
-        selectedAnimalActiveGene.textProperty().bind(createSelectedAnimalBinding(selectedAnimalViewModel.activeGeneIndexProperty()));
-        selectedAnimalDescendants.textProperty().bind(createSelectedAnimalBinding(selectedAnimalViewModel.descendantsCountProperty()));
-        selectedAnimalDeathDate.textProperty().bind(selectedAnimalViewModel.deathDateProperty()); // String property handles "-"
-    }
-
-    /** Binds lifecycle UI controls (buttons, slider) to the LifecycleManager, using MessageService for text. */
+    /** Wiąże kontrolki cyklu życia (przyciski, suwak) z SimulationLifecycleManager. */
     private void bindLifecycleControls() {
         if (lifecycleManager == null) return;
-        // Bind disable properties
         playPauseButton.disableProperty().bind(lifecycleManager.canControlProperty().not());
         speedSlider.disableProperty().bind(lifecycleManager.canControlProperty().not());
-
-        // Bind play/pause button text using message service keys
         playPauseButton.textProperty().bind(Bindings.createStringBinding(() -> {
-            if (!lifecycleManager.canControlProperty().get()) { // If simulation ended
+            if (!lifecycleManager.canControlProperty().get()) {
                 return messageService.getMessage("sim.button.ended");
-            } else { // Simulation controllable
+            } else {
                 return lifecycleManager.pausedProperty().get()
-                        ? messageService.getMessage("sim.button.play") // Show "Play" if paused
-                        : messageService.getMessage("sim.button.pause"); // Show "Pause" if running
+                        ? messageService.getMessage("sim.button.play")
+                        : messageService.getMessage("sim.button.pause");
             }
-        }, lifecycleManager.pausedProperty(), lifecycleManager.canControlProperty())); // Depends on both properties
-
-        // Bind slider value bidirectionally
+        }, lifecycleManager.pausedProperty(), lifecycleManager.canControlProperty()));
         speedSlider.valueProperty().bindBidirectional(lifecycleManager.speedSliderValueProperty());
     }
 
-    /** Configures the simulation canvas to resize dynamically within its ScrollPane container. */
+    /** Konfiguruje płótno symulacji do dynamicznego zmieniania rozmiaru. */
     private void setupCanvasResponsiveness() {
         if (canvasScrollPane != null && simulationCanvas != null && mapRenderer != null) {
-            // Use constant for padding
             final double padding = AppConstants.CANVAS_PADDING;
+
             // Bind canvas size to scroll pane viewport size minus padding
             simulationCanvas.widthProperty().bind(canvasScrollPane.widthProperty().subtract(padding));
             simulationCanvas.heightProperty().bind(canvasScrollPane.heightProperty().subtract(padding));
-            // Add listeners to redraw the map when canvas dimensions change
-            simulationCanvas.widthProperty().addListener((obs, oldVal, newVal) -> updateCanvasAndRedraw());
-            simulationCanvas.heightProperty().addListener((obs, oldVal, newVal) -> updateCanvasAndRedraw());
-            // Ensure initial redraw after layout pass
-            Platform.runLater(this::updateCanvasAndRedraw);
+
+            // Add listeners to redraw when the bound size actually changes
+            simulationCanvas.widthProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null && newVal.doubleValue() > 0) { // Only redraw if valid size
+                    updateCanvasAndRedraw();
+                }
+            });
+            simulationCanvas.heightProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null && newVal.doubleValue() > 0) { // Only redraw if valid size
+                    updateCanvasAndRedraw();
+                }
+            });
+            // Initial attempt to update/redraw (might still be zero size here)
+            // Platform.runLater(this::updateCanvasAndRedraw); // Moved initial draw later
         } else {
-            System.err.println("Warning: Canvas ScrollPane, Canvas, or MapRenderer is null. Canvas will not resize dynamically.");
-            // Fallback size if canvas exists but container/renderer might be missing
-            if (simulationCanvas != null && mapRenderer != null) {
-                simulationCanvas.setWidth(600); simulationCanvas.setHeight(500);
-                Platform.runLater(this::updateCanvasAndRedraw);
-            }
+            System.err.println("Warning: Canvas ScrollPane, Canvas, or MapRenderer is null. Canvas will not resize.");
         }
     }
 
+
     /**
-     * Sets up the listener that reacts to the end of each simulation day.
-     * This listener runs in the simulation thread. It triggers statistics calculation/saving
-     * and schedules UI updates (statistics display, selected animal check, lifecycle control state)
-     * on the JavaFX Application Thread using {@code Platform.runLater}.
+     * Ustawia nasłuchiwacz reagujący na koniec dnia symulacji.
+     * Aktualizuje ViewModel statystyk oraz model danych wykresu.
      */
     private void setupDayEndListener() {
-        // Ensure required components are initialized before adding the listener
-        if (simulation == null || statisticsManager == null || selectedAnimalViewModel == null || lifecycleManager == null || simulationController == null) {
+        if (simulation == null || statisticsManager == null || selectedAnimalViewModel == null || chartDataModel == null || lifecycleManager == null || simulationEngine == null) {
             System.err.println("Cannot setup day end listener - required components missing.");
             return;
         }
-        // Add a lambda to be executed by the Simulation thread at the end of each day
-        simulation.addDayEndListener(() -> { // This lambda runs in the SimulationController's thread
-            // 1. Create and potentially save statistics snapshot
-            SimulationStatisticsSnapshot statsSnapshot = statisticsManager.createAndCacheStatisticsSnapshot();
-            if (statisticsManager.isCollectingData() && statsSnapshot != null) {
-                statisticsManager.saveDailyStatistics(statsSnapshot); // Save if enabled
-            }
+        simulation.addDayEndListener(() -> {
+            statisticsManager.generateAndSaveDailyStatisticsIfNeeded();
+            Optional<SimulationStatisticsSnapshot> statsSnapshotOpt = statisticsManager.generateCurrentSnapshot();
 
-            // 2. Schedule UI updates on the JavaFX Application Thread
             Platform.runLater(() -> {
-                // Update statistics display via ViewModel
-                if (statsSnapshot != null) {
-                    statisticsViewModel.updateStatistics(statsSnapshot);
+                statsSnapshotOpt.ifPresent(snapshot -> {
+                    statisticsViewModel.updateStatistics(snapshot);
+                    if (this.chartDataModel != null) {
+                        this.chartDataModel.addDailyData(snapshot);
+                    }
+                });
+                if (statsSnapshotOpt.isEmpty()) {
+                    statisticsViewModel.clearStatistics();
                 }
-                // Check liveness of the selected animal based on the last rendered state
+
                 if (lastProcessedSnapshot != null) {
                     checkSelectedAnimalLiveness(lastProcessedSnapshot);
                 }
-                // Check if the simulation controller has stopped (e.g., no animals left)
-                if (simulationController.isStopped()) {
-                    lifecycleManager.simulationEnded(); // Notify manager to update UI state (buttons/slider)
+                if (simulationEngine.isStopped()) {
+                    lifecycleManager.simulationEnded();
                 }
             });
         });
     }
 
-    /**
-     * Attaches an event handler to the window's close request (clicking the 'X' button).
-     * This handler ensures that the simulation instance is unregistered from the
-     * {@link ActiveSimulationRegistry} *before* signaling the simulation threads to stop.
-     *
-     * @param ownerWindow The {@link Window} (Stage) hosting this controller. Must not be null.
-     */
+    /** Dodaje handler zdarzenia zamknięcia okna do zatrzymania wątków. */
     private void setupWindowCloseHandler(Window ownerWindow) {
         Objects.requireNonNull(ownerWindow, "OwnerWindow cannot be null for close handler setup");
-        // Use injected activeSimulationRegistry
         ownerWindow.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST, event -> {
             String windowTitle = (ownerStage != null) ? ownerStage.getTitle() : "Unknown Window";
-            System.out.println("Simulation window closing request received for window: " + windowTitle);
-            // --- Important: Unregister BEFORE stopping threads ---
-            // This prevents potential issues if stopping takes time or another action tries to find this window.
+            System.out.println("Simulation window closing request received: " + windowTitle);
             this.activeSimulationRegistry.unregister(this.configName, this);
-            // --- Now signal threads to stop ---
+            System.out.println("Unregistered simulation from ActiveSimulationRegistry: " + windowTitle);
             stopSimulationThreads();
-            // Do not consume the event, allow the window to close naturally.
         });
     }
 
-    // --- Starting Background Processes ---
-
-    /** Starts background threads, currently just the SimulationStateProducer. */
+    /** Uruchamia wątki tła (np. SimulationStateProducer). */
     private void startBackgroundThreads() {
         if (stateProducer != null) {
             Thread producerThread = new Thread(stateProducer, "SimStateProducer-" + configName);
-            producerThread.setDaemon(true); // Allow JVM exit even if this thread runs
+            producerThread.setDaemon(true);
             producerThread.start();
         } else {
             System.err.println("Error: Cannot start state producer thread, stateProducer is null.");
+            alertService.showAlert(IAlertService.AlertType.ERROR,
+                    messageService.getMessage("error.title"),
+                    messageService.getMessage("error.thread.start.fail"));
         }
     }
 
-    // --- UI Action Handlers ---
-
-    /** Handles the Play/Pause button click by delegating to the SimulationLifecycleManager. */
+    /** Obsługuje kliknięcie przycisku Play/Pause. */
     @FXML private void handlePlayPause() {
         if (lifecycleManager != null) {
             lifecycleManager.togglePause();
         }
     }
 
-    /** Handles the 'Log Data' button click by toggling data collection in StatisticsManager and updating button text. */
+    /** Obsługuje kliknięcie przycisku 'Log Data'. */
     @FXML private void handleToggleDataCollection() {
         if (statisticsManager != null) {
             statisticsManager.toggleDataCollection();
-            updateCollectingDataButtonText(); // Update button text reflects new state
+            updateCollectingDataButtonText();
         }
     }
 
-    /**
-     * Handles the 'Take Snapshot' button click.
-     * Temporarily pauses the simulation (if running), triggers the {@link StatisticsManager}
-     * to generate and save a snapshot (prompting the user via {@link IFileSaveService}),
-     * and then resumes the simulation if it was paused. Uses the injected {@link IAlertService}
-     * and {@link IMessageService} to display any errors during the process.
-     */
+    /** Obsługuje kliknięcie przycisku 'Take Snapshot'. */
     @FXML private void handleTakeSnapshot() {
-        // Check required components (alertService and messageService are guaranteed by constructor)
         if (statisticsManager == null || lifecycleManager == null) {
-            System.err.println("Cannot take snapshot: Required components (StatisticsManager, LifecycleManager) are missing.");
-            // Optionally show an alert here
+            System.err.println("Cannot take snapshot: Required components missing.");
             alertService.showAlert(IAlertService.AlertType.ERROR,
                     messageService.getMessage("error.title"),
-                    "Snapshot functionality is unavailable due to missing components.");
+                    messageService.getMessage("error.snapshot.unavailable"));
             return;
         }
-
-        boolean wasPausedForSnapshot = lifecycleManager.pauseForAction(); // Pause simulation if running
+        boolean wasPausedForSnapshot = lifecycleManager.pauseForAction();
         try {
-            // Delegate snapshot taking and saving (including file chooser)
-            statisticsManager.takeSnapshot();
-        } catch (IOException e) {
-            alertService.showAlert(IAlertService.AlertType.ERROR,
-                    messageService.getMessage("error.title"),
-                    messageService.getFormattedMessage("error.snapshot.save", e.getMessage()));
-            e.printStackTrace();
+            statisticsManager.generateAndSaveSnapshotManually();
         } catch (IllegalStateException e) {
-            alertService.showAlert(IAlertService.AlertType.ERROR,
-                    messageService.getMessage("error.title"),
-                    messageService.getFormattedMessage("error.snapshot.init", e.getMessage()));
-            e.printStackTrace();
+            System.err.println("State exception during manual snapshot save: " + e.getMessage());
         } catch (Exception e) {
+            System.err.println("Unexpected error during manual snapshot: " + e.getMessage());
             alertService.showAlert(IAlertService.AlertType.ERROR,
                     messageService.getMessage("error.title"),
                     messageService.getFormattedMessage("error.snapshot.unexpected", e.getMessage()));
             e.printStackTrace();
         } finally {
-            // Ensure simulation resumes ONLY if it was specifically paused by this action
             if (wasPausedForSnapshot) {
-                // Schedule the resume call on the JavaFX thread to ensure it runs after any potential dialogs close
                 Platform.runLater(lifecycleManager::resumeAfterAction);
             }
         }
     }
 
-    // --- Rendering and State Processing ---
-
-    /**
-     * Callback method invoked by the {@link SimulationRenderer} when a new snapshot has been dequeued
-     * and is about to be rendered. This method runs on the JavaFX Application Thread.
-     * It updates the controller's reference to the latest processed snapshot and checks the liveness
-     * of the animal currently selected in the UI.
-     *
-     * @param snapshot The {@link SimulationStateSnapshot} that was just dequeued and processed by the renderer. Must not be null.
-     */
-    private void processRenderedSnapshot(SimulationStateSnapshot snapshot) {
-        lastProcessedSnapshot = snapshot; // Update the reference
-        checkSelectedAnimalLiveness(snapshot); // Check selected animal status
+    /** Callback wywoływany przez renderer po przetworzeniu migawki renderowania. */
+    private void processRenderedSnapshot(SimulationRenderSnapshot snapshot) {
+        lastProcessedSnapshot = snapshot;
+        checkSelectedAnimalLiveness(snapshot);
     }
 
-    /** Draws the initial state of the simulation map, typically on window load. */
+    /** Rysuje początkowy stan mapy, używając IAlertService do informowania o błędach. */
     private void drawInitialMapState() {
         if (stateProducer != null && simulationRenderer != null) {
+            // --- Check canvas size before initial draw ---
+            if (simulationCanvas == null || simulationCanvas.getWidth() <= 0 || simulationCanvas.getHeight() <= 0) {
+                System.err.println("drawInitialMapState: Canvas size invalid, delaying initial draw.");
+                // Reschedule if size is still invalid
+                Platform.runLater(() -> {
+                    if (simulationCanvas == null || simulationCanvas.getWidth() <= 0 || simulationCanvas.getHeight() <= 0){
+                        System.err.println("drawInitialMapState (delayed): Canvas size still invalid. Initial state might not render.");
+                        alertService.showAlert(IAlertService.AlertType.WARNING,
+                                messageService.getMessage("warning.render.initial.header"),
+                                messageService.getMessage("warning.render.initial.content")
+                        );
+                    } else {
+                        drawInitialMapState(); // Try drawing again now that size might be valid
+                    }
+                });
+                return; // Stop this attempt
+            }
+            // --- End canvas size check ---
+
             System.out.println("Drawing initial simulation map state...");
-            SimulationStateSnapshot initialSnapshot = stateProducer.createInitialSnapshot();
+            SimulationRenderSnapshot initialSnapshot = stateProducer.createInitialSnapshot();
             if (initialSnapshot != null) {
-                lastProcessedSnapshot = initialSnapshot; // Store as the first processed state
-                simulationRenderer.redrawFrame(initialSnapshot); // Ask renderer to draw it
+                lastProcessedSnapshot = initialSnapshot;
+                simulationRenderer.redrawFrame(initialSnapshot); // Draw the frame
             } else {
-                System.err.println("Could not draw initial map state - snapshot creation failed.");
-                clearCanvas(); // Clear canvas as fallback
+                System.err.println("Internal Error: Could not draw initial map state - initial snapshot creation failed.");
+                clearCanvas();
+                alertService.showAlert(IAlertService.AlertType.WARNING,
+                        messageService.getMessage("warning.title"),
+                        messageService.getMessage("warning.render.initial.header"),
+                        messageService.getMessage("warning.render.initial.content")
+                );
             }
         } else {
-            System.err.println("Cannot draw initial state: StateProducer or SimulationRenderer is null.");
-            clearCanvas(); // Clear canvas
+            System.err.println("Internal Error: Cannot draw initial state: StateProducer or SimulationRenderer is null.");
+            clearCanvas();
+            alertService.showAlert(IAlertService.AlertType.ERROR,
+                    messageService.getMessage("error.title"),
+                    messageService.getMessage("error.render.initial.componentNull.header"),
+                    messageService.getMessage("error.render.initial.componentNull.content")
+            );
         }
     }
 
-    /** Clears the simulation canvas by filling it with a default background color or transparency. */
+    /** Czyści płótno. */
     private void clearCanvas() {
         if (simulationCanvas != null) {
             GraphicsContext gc = simulationCanvas.getGraphicsContext2D();
-            // Clear the rectangle covering the entire canvas
-            gc.clearRect(0, 0, simulationCanvas.getWidth(), simulationCanvas.getHeight());
-            // Optional: Fill with a background color if desired when empty
-            // gc.setFill(Color.LIGHTGRAY);
-            // gc.fillRect(0, 0, simulationCanvas.getWidth(), simulationCanvas.getHeight());
+            if (gc != null) { // Add null check for GraphicsContext
+                gc.clearRect(0, 0, simulationCanvas.getWidth(), simulationCanvas.getHeight());
+            }
         }
     }
 
-    /** Called when the canvas size changes. Updates the renderer's cell dimensions and triggers a redraw of the last known state. */
+    /** Aktualizuje renderer mapy i przerysowuje ją po zmianie rozmiaru płótna. */
     private void updateCanvasAndRedraw() {
+        // ---- ADD SIZE CHECK ----
+        if (simulationCanvas == null || simulationCanvas.getWidth() <= 0 || simulationCanvas.getHeight() <= 0) {
+            //System.out.println("updateCanvasAndRedraw skipped: Canvas size invalid."); // Optional log
+            return; // Don't redraw if canvas size is not yet determined or invalid
+        }
+        // ---- END SIZE CHECK ----
+
         if (mapRenderer != null) {
-            mapRenderer.updateCellDimensions(); // Recalculate cell sizes
+            mapRenderer.updateCellDimensions(); // Calculate new dimensions
         }
-        // Trigger a redraw using the SimulationRenderer's redrawFrame method
-        if (simulationRenderer != null) {
-            redrawLastState(); // Use helper method to redraw last snapshot
-        }
+        // No need to check simulationRenderer == null here, redrawLastState does it
+        redrawLastState(); // Redraw using the last known snapshot
     }
 
-    /** Schedules a redraw of the last processed simulation state snapshot on the JavaFX Application Thread. */
+    /** Planuje przerysowanie ostatniego znanego stanu w wątku UI. */
     private void redrawLastState() {
         Platform.runLater(() -> {
-            if (simulationRenderer != null) {
-                // Tell the renderer to draw the last known snapshot
-                simulationRenderer.redrawFrame(lastProcessedSnapshot);
-            } else if (lastProcessedSnapshot == null){
-                // Fallback: If no snapshot processed yet, try drawing initial state again
-                // This might happen if resize occurs before first snapshot is ready
-                drawInitialMapState();
+            // --- ADD SIZE CHECK (again, important before drawing) ---
+            if (simulationCanvas == null || simulationCanvas.getWidth() <= 0 || simulationCanvas.getHeight() <= 0) {
+                // System.out.println("redrawLastState skipped: Canvas size invalid."); // Optional log
+                return;
             }
+            // --- END SIZE CHECK ---
+
+            if (simulationRenderer != null) {
+                // Draw the last known snapshot, which might be null initially
+                simulationRenderer.redrawFrame(lastProcessedSnapshot);
+            }
+            // Removed redundant drawInitialMapState call
         });
     }
 
-    /**
-     * Checks if the animal currently selected in the UI (via {@link SelectedAnimalViewModel})
-     * still exists and is alive in the provided {@link SimulationStateSnapshot}. Updates the ViewModel
-     * accordingly. If the animal is found, its details are refreshed. If not found (presumed dead or removed),
-     * the ViewModel is updated based on the last known state of the animal reference.
-     *
-     * @param snapshot The {@link SimulationStateSnapshot} representing the current state to check against. Must not be null.
-     */
-    private void checkSelectedAnimalLiveness(SimulationStateSnapshot snapshot) {
+    /** Sprawdza, czy aktualnie wybrane zwierzę nadal istnieje w ostatniej migawce renderowania. */
+    private void checkSelectedAnimalLiveness(SimulationRenderSnapshot snapshot) {
         Objects.requireNonNull(snapshot, "Snapshot cannot be null for checking liveness");
-        // Check if an animal is actually selected in the ViewModel
-        if (!selectedAnimalViewModel.isSelectedProperty().get()) {
-            return; // Nothing selected, nothing to check
-        }
+        if (selectedAnimalViewModel == null || !selectedAnimalViewModel.isSelectedProperty().get()) return;
+
         Animal currentlySelected = selectedAnimalViewModel.getCurrentAnimalReference();
-        // If ViewModel indicates selection but has no reference, clear it for consistency
         if (currentlySelected == null) {
             selectedAnimalViewModel.clear();
             return;
         }
+
         long selectedId = currentlySelected.getId();
         boolean foundAliveInSnapshot = false;
 
-        // Search for the animal ID within the snapshot's animal map (which is immutable)
-        if (snapshot.getAnimals() != null) {
-            searchLoop: // Label allows breaking out of nested loops once found
-            for (List<Animal> listAtPos : snapshot.getAnimals().values()) { // Iterate through lists at each position
-                // No need to check list for null, snapshot guarantees immutable non-null lists (could be empty)
-                for (Animal animalInSnapshot : listAtPos) { // Iterate animals at this position
+        if (snapshot.animals() != null) {
+            searchLoop:
+            for (List<Animal> listAtPos : snapshot.animals().values()) {
+                for (Animal animalInSnapshot : listAtPos) {
                     if (animalInSnapshot.getId() == selectedId) {
                         foundAliveInSnapshot = true;
-                        // Update the ViewModel with the most recent data from the snapshot's animal instance
                         selectedAnimalViewModel.update(animalInSnapshot);
-                        break searchLoop; // Exit both loops once found
+                        break searchLoop;
                     }
                 }
             }
         }
 
-        // Handle the case where the selected animal was NOT found in the current snapshot
         if (!foundAliveInSnapshot) {
-            // The animal is gone from the live map. Refresh the ViewModel using the
-            // last known reference. If the animal died between snapshots, its reference
-            // might now reflect isAlive=false and have a deathDate.
+            // If not found in snapshot, update ViewModel with the last known reference
+            // This will show its final state (potentially dead)
             selectedAnimalViewModel.update(currentlySelected);
-
-            // Log a warning if the internal reference still indicates 'alive' but it wasn't found.
-            // This could indicate a brief inconsistency or a bug.
-            if(currentlySelected.isAlive()){
-                System.out.println("Warning: Selected animal ID " + selectedId + " not found in current snapshot, but internal reference indicates it should be alive.");
+            if (currentlySelected.isAlive()) {
+                // Log if the animal reference claims it's alive but wasn't in the snapshot's live list
+                System.err.println("Warning: Selected animal ID " + selectedId + " not found in render snapshot's animal map, but reference indicates alive.");
             }
         }
-        // If foundAliveInSnapshot was true, the ViewModel was already updated inside the loop.
     }
 
-    // --- Shutdown Logic ---
-
-    /**
-     * Stops all simulation-related background threads and timers associated with this window instance.
-     * This method is typically called when the window is closing or if the simulation needs to be
-     * forcefully stopped (e.g., when its configuration is deleted). It signals the
-     * {@link SimulationRenderer}, {@link SimulationController}, and {@link SimulationStateProducer} to stop
-     * and detaches canvas event handlers.
-     * Note: This method does *not* handle unregistering from the {@link ActiveSimulationRegistry};
-     * that is typically handled by the caller (e.g., the window close handler or the registry itself).
-     */
+    /** Zatrzymuje wszystkie wątki związane z symulacją. Wywoływana przy zamykaniu okna. */
     public void stopSimulationThreads() {
         String windowTitle = (ownerStage != null) ? ownerStage.getTitle() : "Unknown Window";
         System.out.println("Stopping simulation components for window: " + windowTitle);
-        // Stop components gracefully, renderer first is often good practice
         if (simulationRenderer != null) simulationRenderer.stop();
-        if (simulationController != null) simulationController.stop(); // Signals simulation logic thread
-        if (stateProducer != null) stateProducer.stop(); // Signals state producer thread
-        if (canvasInteractionHandler != null) canvasInteractionHandler.detachHandlers(); // Remove mouse listener
+        if (simulationEngine != null) simulationEngine.stop();
+        if (stateProducer != null) stateProducer.stop();
+        if (canvasInteractionHandler != null) canvasInteractionHandler.detachHandlers();
         System.out.println("Simulation components stop signals sent for window: " + windowTitle);
     }
 
-    /** Disables UI controls and clears canvas, typically called on initialization failure to prevent interaction. */
+    /** Wyłącza UI w razie krytycznego błędu inicjalizacji. */
     private void shutdownUI() {
-        setInitialUIState(); // Reset controls to initial disabled/default state
-        // Ensure event handlers are removed if they were attached before failure
+        setInitialUIState();
         if (canvasInteractionHandler != null) canvasInteractionHandler.detachHandlers();
-        clearCanvas(); // Clear any partially rendered state
+        clearCanvas();
     }
 
-    // --- Private UI Helper Methods ---
-
-    /** Updates the text on the 'Log Data' button based on the StatisticsManager's state, using MessageService. */
+    /** Aktualizuje tekst przycisku 'Log Data' na podstawie stanu StatisticsManager. */
     private void updateCollectingDataButtonText() {
         if (statisticsManager != null) {
-            // Choose the correct message key based on the data collection state
-            String messageKey = statisticsManager.isCollectingData()
+            boolean isCollecting = statisticsManager.isCollectingData();
+            String messageKey = isCollecting
                     ? "sim.button.logDataOn"
                     : "sim.button.logDataOff";
             collectingDataButton.setText(messageService.getMessage(messageKey));
         } else {
-            // Fallback if manager isn't ready (e.g., during initialization)
             collectingDataButton.setText(messageService.getMessage("sim.button.logDataError"));
-            collectingDataButton.setDisable(true); // Keep disabled if manager unavailable
+            collectingDataButton.setDisable(true);
         }
     }
 
-    /**
-     * Creates a {@link StringBinding} for a UI label displaying an integer property from the
-     * {@link SelectedAnimalViewModel}. The binding shows the integer value followed by a
-     * localized suffix (if provided) when an animal is selected, otherwise it shows a
-     * localized placeholder ("-").
-     *
-     * @param property  The {@link ReadOnlyIntegerProperty} from the ViewModel to display.
-     * @param suffixKey The resource key (in messages.properties) for the optional suffix string (e.g., "unit.days"). Can be null.
-     * @return A {@link StringBinding} ready to be bound to a Label's textProperty.
-     */
-    private StringBinding createSelectedAnimalBinding(ReadOnlyIntegerProperty property, String suffixKey) {
-        // Get suffix and placeholder from message service
-        String suffix = (suffixKey != null && !suffixKey.isEmpty()) ? messageService.getMessage(suffixKey) : "";
-        String placeholder = messageService.getMessage("placeholder.selected.none"); // Use placeholder key
-
-        // Create binding: updates when selection state or property value changes
-        return Bindings.createStringBinding(
-                () -> selectedAnimalViewModel.isSelectedProperty().get()
-                        ? String.valueOf(property.get()) + suffix // Value + suffix if selected
-                        : placeholder, // Placeholder if not selected
-                selectedAnimalViewModel.isSelectedProperty(), property // Dependencies
-        );
-    }
-
-    /**
-     * Overload for {@link #createSelectedAnimalBinding(ReadOnlyIntegerProperty, String)} that takes no suffix key.
-     * Creates a binding that shows only the integer value or the placeholder.
-     *
-     * @param property The {@link ReadOnlyIntegerProperty} from the ViewModel to display.
-     * @return A {@link StringBinding} showing the integer value or a placeholder "-".
-     */
-    private StringBinding createSelectedAnimalBinding(ReadOnlyIntegerProperty property) {
-        return createSelectedAnimalBinding(property, null); // Call main method with null suffix key
-    }
+    // Gettery dla ViewModeli i Modelu Danych Wykresu
+    public StatisticsViewModel getStatisticsViewModel() { return statisticsViewModel; }
+    public SelectedAnimalViewModel getSelectedAnimalViewModel() { return selectedAnimalViewModel; }
+    public ChartDataModel getChartDataModel() { return chartDataModel; }
 }

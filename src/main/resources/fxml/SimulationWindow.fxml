@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.canvas.Canvas?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.canvas.Canvas?>
-<?import javafx.geometry.Orientation?>
 
 <BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
             fx:controller="proj.app.controllers.SimulationWindowController">
@@ -12,102 +12,60 @@
             <Button fx:id="playPauseButton" text="Pause" onAction="#handlePlayPause"/>
             <Separator orientation="VERTICAL"/>
             <Label fx:id="speedLabel" text="Speed:"/>
-            <Slider fx:id="speedSlider" min="0" max="100" value="50"
-                    showTickLabels="true" showTickMarks="true"/>
+            <Slider fx:id="speedSlider" min="0" max="100" value="50" showTickLabels="true" showTickMarks="true"/>
             <Separator orientation="VERTICAL"/>
             <CheckBox fx:id="showStatisticsCheckbox" text="Show Statistics" selected="true"/>
+            <Separator orientation="VERTICAL"/>
+            <Button fx:id="collectingDataButton" text="Log Data: N/A" onAction="#handleToggleDataCollection"/>
+            <Button fx:id="takeSnapshotButton" text="Take Snapshot" onAction="#handleTakeSnapshot"/>
         </ToolBar>
     </top>
 
     <center>
-        <SplitPane dividerPositions="0.8">
+        <SplitPane dividerPositions="0.70" fx:id="mainSplitPane"> <!-- Adjust divider position if needed -->
+            <!-- Left Panel: Map (unchanged) -->
             <AnchorPane>
-                <ScrollPane fx:id="canvasScrollPane" AnchorPane.topAnchor="0.0"
-                            AnchorPane.bottomAnchor="0.0"
-                            AnchorPane.leftAnchor="0.0"
-                            AnchorPane.rightAnchor="0.0"
-                            fitToWidth="true" fitToHeight="true">
-                    <StackPane>
-                        <Canvas fx:id="simulationCanvas"/>
-                    </StackPane>
+                <ScrollPane fx:id="canvasScrollPane" AnchorPane.topAnchor="0.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" fitToWidth="true" fitToHeight="true">
+                    <StackPane> <Canvas fx:id="simulationCanvas"/> </StackPane>
                 </ScrollPane>
             </AnchorPane>
 
-            <VBox spacing="10" visible="${showStatisticsCheckbox.selected}" managed="${showStatisticsCheckbox.selected}">
-                <TitledPane fx:id="currentStatsPane" text="Current Simulation Statistics" expanded="true">
-                    <GridPane vgap="5" hgap="10">
-                        <Label fx:id="dayLabel" text="Day:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                        <Label fx:id="dayCount" text="0" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+            <!-- Right Panel: Replaced VBox with GridPane -->
+            <GridPane fx:id="statsGridPane" hgap="5" vgap="10"> <!-- Added fx:id, hgap, vgap -->
+                <padding>
+                    <Insets top="5" right="5" bottom="5" left="5"/> <!-- Adjusted padding -->
+                </padding>
+                <!-- Define 2 columns, each taking 50% width -->
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="50.0" hgrow="SOMETIMES" halignment="CENTER"/>
+                    <ColumnConstraints percentWidth="50.0" hgrow="SOMETIMES" halignment="CENTER"/>
+                </columnConstraints>
+                <!-- Define 2 rows, each taking 50% height -->
+                <rowConstraints>
+                    <RowConstraints percentHeight="50.0" vgrow="SOMETIMES" valignment="CENTER"/>
+                    <RowConstraints percentHeight="50.0" vgrow="SOMETIMES" valignment="CENTER"/>
+                </rowConstraints>
 
-                        <Label fx:id="animalLabel" text="Animals:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-                        <Label fx:id="animalCount" text="0" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                <!-- Place included panels into grid cells -->
+                <fx:include fx:id="statisticsPanel" source="StatisticsPanel.fxml"
+                            GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                <fx:include fx:id="genotypesPanel" source="GenotypesPanel.fxml"
+                            GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                <fx:include fx:id="selectedAnimalPanel" source="SelectedAnimalPanel.fxml"
+                            GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                <fx:include fx:id="chartControlsPanel" source="ChartControlsPanel.fxml"
+                            GridPane.columnIndex="1" GridPane.rowIndex="1"/>
 
-                        <Label fx:id="plantLabel" text="Plants:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-                        <Label fx:id="plantCount" text="0" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+            </GridPane> <!-- End of GridPane -->
 
-                        <Label fx:id="emptyFieldsLabel" text="Empty Fields:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
-                        <Label fx:id="emptyFieldsCount" text="0" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
-
-                        <Label fx:id="popularGenotypesLabel" text="Most Popular Genotypes:" GridPane.columnIndex="0" GridPane.rowIndex="4" GridPane.columnSpan="2"/>
-
-                        <!-- *** CLEANED TextArea DEFINITION - USING SELF-CLOSING TAG *** -->
-                        <TextArea fx:id="popularGenotypes"
-                                  editable="false"
-                                  wrapText="true"
-                                  prefRowCount="5"
-                                  maxHeight="100"
-                                  GridPane.columnIndex="0"
-                                  GridPane.columnSpan="2"
-                                  GridPane.rowIndex="5"/>
-                        <!-- *** END CLEANED TextArea *** -->
-
-                        <Label fx:id="avgEnergyLabel" text="Average Energy:" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
-                        <Label fx:id="averageEnergy" text="0.0" GridPane.columnIndex="1" GridPane.rowIndex="6"/>
-
-                        <Label fx:id="avgLifespanLabel" text="Average Lifespan:" GridPane.columnIndex="0" GridPane.rowIndex="7"/>
-                        <Label fx:id="averageLifespan" text="0.0 days" GridPane.columnIndex="1" GridPane.rowIndex="7"/>
-
-                        <Label fx:id="avgChildrenLabel" text="Average Children:" GridPane.columnIndex="0" GridPane.rowIndex="8"/>
-                        <Label fx:id="averageChildren" text="0.00" GridPane.columnIndex="1" GridPane.rowIndex="8"/>
-                    </GridPane>
-                </TitledPane>
-
-                <TitledPane fx:id="selectedAnimalPane" text="Selected Animal" expanded="true">
-                    <GridPane vgap="5" hgap="10">
-                        <Label fx:id="selectedAnimalEnergyLabel" text="Energy:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                        <Label fx:id="selectedAnimalEnergy" text="-" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
-
-                        <Label fx:id="selectedAnimalAgeLabel" text="Age:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-                        <Label fx:id="selectedAnimalAge" text="-" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-
-                        <Label fx:id="selectedAnimalChildrenLabel" text="Children:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-                        <Label fx:id="selectedAnimalChildren" text="-" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-
-                        <Label fx:id="selectedAnimalPlantsEatenLabel" text="Plants Eaten:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
-                        <Label fx:id="selectedAnimalPlantsEaten" text="-" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
-
-                        <Label fx:id="selectedAnimalGenotypeLabel" text="Genotype:" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
-                        <Label fx:id="selectedAnimalGenotype" wrapText="true" text="-" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-
-                        <Label fx:id="selectedAnimalActiveGeneLabel" text="Active Gene:" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
-                        <Label fx:id="selectedAnimalActiveGene" text="-" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
-
-                        <Label fx:id="selectedAnimalDescendantsLabel" text="Descendants:" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
-                        <Label fx:id="selectedAnimalDescendants" text="-" GridPane.columnIndex="1" GridPane.rowIndex="6"/>
-
-                        <Label fx:id="selectedAnimalDeathDateLabel" text="Death Day:" GridPane.columnIndex="0" GridPane.rowIndex="7"/>
-                        <Label fx:id="selectedAnimalDeathDate" text="-" GridPane.columnIndex="1" GridPane.rowIndex="7"/>
-                    </GridPane>
-                </TitledPane>
-            </VBox>
         </SplitPane>
     </center>
 
     <bottom>
-        <HBox spacing="10" alignment="CENTER_RIGHT" style="-fx-padding: 5;">
-            <Button fx:id="collectingDataButton" text="Log Data: N/A" onAction="#handleToggleDataCollection"/>
-            <Button fx:id="takeSnapshotButton" text="Take Snapshot" onAction="#handleTakeSnapshot"/>
-        </HBox>
+        <!-- Chart Panel (unchanged) -->
+        <StackPane fx:id="chartPanelContainer">
+            <fx:include fx:id="chartPanel" source="StatisticsChartPanel.fxml"/>
+        </StackPane>
     </bottom>
 
 </BorderPane>

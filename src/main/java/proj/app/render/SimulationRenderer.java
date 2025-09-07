@@ -1,93 +1,76 @@
 package proj.app.render;
 
 import javafx.animation.AnimationTimer;
-import proj.app.AppConstants; // Use constants
+import proj.app.AppConstants;
 import proj.app.state.SimulationStateQueue;
-import proj.app.state.SimulationStateSnapshot;
+// --- POPRAWNY IMPORT ---
+import proj.app.state.SimulationRenderSnapshot;
 
 import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
- * Manages the rendering loop using a JavaFX {@link AnimationTimer} for the simulation window.
- * It efficiently dequeues simulation state snapshots from a {@link SimulationStateQueue},
- * passes them to a processor callback (typically in the controller), and then delegates
- * the actual drawing task to the injected {@link MapRenderer}. This decouples rendering
- * updates from the simulation logic thread. Uses timing constants from {@link AppConstants}.
+ * Zarządza pętlą renderowania za pomocą JavaFX {@link AnimationTimer}.
+ * Efektywnie pobiera migawki stanu symulacji ({@link SimulationRenderSnapshot})
+ * z {@link SimulationStateQueue}, przekazuje je do callbacka (np. w kontrolerze)
+ * i deleguje rysowanie do {@link MapRenderer}.
  */
 public class SimulationRenderer {
 
-    private final SimulationStateQueue stateQueue;
+    // Kolejka i procesor muszą używać SimulationRenderSnapshot
+    private final SimulationStateQueue<SimulationRenderSnapshot> stateQueue;
     private final MapRenderer mapRenderer;
-    private final Consumer<SimulationStateSnapshot> snapshotProcessor; // Callback for the controller
+    private final Consumer<SimulationRenderSnapshot> snapshotProcessor; // Callback akceptuje RenderSnapshot
     private AnimationTimer animationTimer;
-    private volatile boolean isRunning = false; // Controls the AnimationTimer running state
+    private volatile boolean isRunning = false;
 
     /**
-     * Constructs the SimulationRenderer.
+     * Konstruuje SimulationRenderer.
      *
-     * @param stateQueue        The thread-safe queue providing {@link SimulationStateSnapshot} objects
-     *                          produced by the simulation state producer. Must not be null.
-     * @param mapRenderer       The {@link MapRenderer} instance responsible for drawing the simulation
-     *                          state onto the designated canvas. Must not be null.
-     * @param snapshotProcessor A {@link Consumer} functional interface (e.g., a method reference or lambda)
-     *                          that will be invoked on the JavaFX Application Thread just before a snapshot
-     *                          is rendered. This allows the caller (e.g., {@link proj.app.controllers.SimulationWindowController})
-     *                          to perform actions based on the snapshot being rendered, such as updating internal state
-     *                          or checking selected animal liveness. Must not be null.
-     * @throws NullPointerException if any parameter is null.
+     * @param stateQueue        Kolejka dostarczająca {@link SimulationRenderSnapshot}. Nie może być null.
+     * @param mapRenderer       Instancja {@link MapRenderer}. Nie może być null.
+     * @param snapshotProcessor Callback (np. metoda kontrolera) wywoływany przed renderowaniem migawki. Nie może być null.
      */
-    public SimulationRenderer(SimulationStateQueue stateQueue, MapRenderer mapRenderer, Consumer<SimulationStateSnapshot> snapshotProcessor) {
-        this.stateQueue = Objects.requireNonNull(stateQueue, "StateQueue cannot be null");
+    public SimulationRenderer(SimulationStateQueue<SimulationRenderSnapshot> stateQueue, MapRenderer mapRenderer, Consumer<SimulationRenderSnapshot> snapshotProcessor) {
+        this.stateQueue = Objects.requireNonNull(stateQueue, "StateQueue<SimulationRenderSnapshot> cannot be null");
         this.mapRenderer = Objects.requireNonNull(mapRenderer, "MapRenderer cannot be null");
         this.snapshotProcessor = Objects.requireNonNull(snapshotProcessor, "SnapshotProcessor callback cannot be null");
         createAnimationTimer();
     }
 
-    /** Creates the internal AnimationTimer instance that drives the rendering loop. */
+    /** Tworzy wewnętrzny AnimationTimer. */
     private void createAnimationTimer() {
         animationTimer = new AnimationTimer() {
-            private long lastUiUpdateTimestamp = 0; // Tracks the timestamp of the last rendered frame
+            private long lastUiUpdateTimestamp = 0;
 
             /**
-             * This method is invoked by the JavaFX framework on the JavaFX Application Thread
-             * for each frame pulse (typically aiming for ~60 FPS). It throttles rendering updates
-             * based on {@link AppConstants#UI_RENDER_INTERVAL_NANOS}, dequeues the latest available
-             * {@link SimulationStateSnapshot} from the queue, invokes the {@code snapshotProcessor} callback,
-             * and then instructs the {@link MapRenderer} to draw the snapshot.
+             * Wywoływana przez JavaFX dla każdej klatki. Pobiera najnowszą migawkę
+             * renderowania, wywołuje procesor i rysuje.
              *
-             * @param now The timestamp of the current frame in nanoseconds, provided by the JavaFX runtime.
+             * @param now Bieżący czas w nanosekundach.
              */
             @Override
             public void handle(long now) {
-                // Throttle rendering updates to approximately match the target frame rate.
-                // Skip processing this frame if the timer is stopped or if not enough time has passed since the last update.
                 if (!isRunning || (now - lastUiUpdateTimestamp < AppConstants.UI_RENDER_INTERVAL_NANOS)) {
                     return;
                 }
-                lastUiUpdateTimestamp = now; // Record the timestamp of this update
+                lastUiUpdateTimestamp = now;
 
-                // Attempt to dequeue the next state snapshot from the shared queue.
-                SimulationStateSnapshot snapshotToRender = stateQueue.dequeue();
+                // --- POPRAWKA: Zadeklaruj zmienną z poprawnym typem ---
+                SimulationRenderSnapshot snapshotToRender = stateQueue.dequeue();
 
-                // Only proceed if a snapshot was successfully dequeued (queue was not empty).
                 if (snapshotToRender != null) {
-                    // Invoke the callback provided during construction, passing the snapshot.
-                    // This allows the controller or other components to react to the snapshot being rendered.
+                    // Wywołaj callback z poprawnym typem
                     snapshotProcessor.accept(snapshotToRender);
 
-                    // Delegate the actual drawing of the snapshot to the MapRenderer.
+                    // Przekaż poprawny typ do renderera mapy
                     mapRenderer.drawSimulation(snapshotToRender);
                 }
-                // If snapshotToRender is null, the queue was empty, so we draw nothing new in this frame.
             }
         };
     }
 
-    /**
-     * Starts the rendering loop by starting the internal {@link AnimationTimer}.
-     * If the renderer is already running, this method has no effect.
-     */
+    /** Uruchamia pętlę renderowania. */
     public void start() {
         if (!isRunning) {
             isRunning = true;
@@ -96,10 +79,7 @@ public class SimulationRenderer {
         }
     }
 
-    /**
-     * Stops the rendering loop by stopping the internal {@link AnimationTimer}.
-     * If the renderer is already stopped, this method has no effect.
-     */
+    /** Zatrzymuje pętlę renderowania. */
     public void stop() {
         if (isRunning) {
             isRunning = false;
@@ -108,28 +88,19 @@ public class SimulationRenderer {
         }
     }
 
-    /**
-     * Checks if the rendering loop (AnimationTimer) is currently active.
-     *
-     * @return {@code true} if the renderer's AnimationTimer is running, {@code false} otherwise.
-     */
+    /** Sprawdza, czy pętla renderowania jest aktywna. */
     public boolean isRunning() {
         return isRunning;
     }
 
     /**
-     * Forces an immediate redraw of the provided simulation state snapshot using the MapRenderer.
-     * This bypasses the normal AnimationTimer throttling and queue mechanism. Useful for instantly
-     * updating the view after events like resizing or loading initial state. This method should
-     * typically be called on the JavaFX Application Thread.
+     * Wymusza natychmiastowe przerysowanie dostarczonej migawki renderowania.
      *
-     * @param snapshotToDraw The {@link SimulationStateSnapshot} to draw immediately. If null, the
-     *                       behavior depends on the {@link MapRenderer#drawSimulation(SimulationStateSnapshot)}
-     *                       implementation (it might clear the canvas or do nothing).
+     * @param snapshotToDraw Migawka {@link SimulationRenderSnapshot} do narysowania.
      */
-    public void redrawFrame(SimulationStateSnapshot snapshotToDraw) {
-        // Delegate directly to mapRenderer; assumes mapRenderer handles null correctly
+    public void redrawFrame(SimulationRenderSnapshot snapshotToDraw) { // Akceptuje RenderSnapshot
         if (mapRenderer != null) {
+            // Przekaż poprawny typ do renderera mapy
             mapRenderer.drawSimulation(snapshotToDraw);
         }
     }

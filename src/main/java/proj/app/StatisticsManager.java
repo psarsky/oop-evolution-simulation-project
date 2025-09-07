@@ -1,283 +1,270 @@
+// Plik: proj/app/StatisticsManager.java
 package proj.app;
 
 import com.google.gson.Gson;
+import proj.app.services.IAlertService;
 import proj.app.services.IFileSaveService;
-import proj.model.elements.Animal;
-import proj.model.maps.AbstractWorldMap;
-import proj.model.maps.WaterWorld;
+import proj.app.services.IMessageService;
+import proj.app.services.IStatisticsPersistenceService;
+import proj.app.services.JsonFileStatisticsPersistence;
+import proj.app.statistics.StatisticsCalculator;
 import proj.simulation.Simulation;
 import proj.simulation.SimulationProperties;
-import proj.util.Vector2d;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Writer;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
- * Manages the calculation, collection, caching, and saving of simulation statistics.
- * It creates snapshots ({@link SimulationStatisticsSnapshot}) containing key metrics by querying the
- * {@link Simulation} state. It supports automatic daily saving and manual snapshot saving via an {@link IFileSaveService}.
- * Dependencies (like Gson and IFileSaveService) are injected.
+ * Zarządza procesem zbierania i inicjowania zapisu statystyk symulacji.
+ * Używa {@link StatisticsCalculator} do generowania danych i deleguje trwałość
+ * do {@link IStatisticsPersistenceService}. Zarządza stanem zbierania danych.
+ * Używa {@link IAlertService} i {@link IMessageService} do informowania użytkownika.
  */
 public class StatisticsManager {
-    private final Simulation simulation; // Reference to the simulation for state access
-    private final SimulationProperties simProps; // Reference to config for map size, etc.
-    private final IFileSaveService fileSaveService; // Service for saving snapshots on demand
-    private final Gson gson; // Gson instance for JSON serialization (injected)
+    private final Simulation simulation;
+    private final SimulationProperties simProps;
+    private final StatisticsCalculator calculator;
+    private final IAlertService alertService;
+    private final IMessageService messageService;
+    private final IStatisticsPersistenceService persistenceService; // Może być null, jeśli inicjalizacja zawiedzie
 
-    // State fields
-    private volatile boolean isCollectingData; // Controls automatic daily saving. Volatile for visibility.
-    private File statisticsDirectory;          // Directory where daily stats are saved.
-    private List<String> currentTopGenotypes = Collections.emptyList(); // Guarded by synchronized access
+    // Stan
+    private volatile boolean isCollectingData; // Bieżący stan włącznika logowania
+    private boolean persistenceInitializedSuccessfully = false; // Czy komponent zapisu się zainicjował?
 
-    // Constants
-    private static final DateTimeFormatter DIR_TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
-    private static final DateTimeFormatter SNAPSHOT_TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
-    private static final String MAIN_STATS_DIR_NAME = "statistics";
-    private static final int TOP_GENOTYPE_COUNT = 3;
+    private static final String MAIN_STATS_DIR_NAME = AppConstants.STATS_DIR_NAME;
 
     /**
-     * Constructs a {@code StatisticsManager} with injected dependencies.
-     * Initializes the data collection state based on simulation properties.
+     * Konstruuje StatisticsManager z wstrzykniętymi zależnościami.
+     * ZAWSZE próbuje zainicjalizować serwis persystencji, jeśli zależności są dostępne.
+     * Stan początkowy 'isCollectingData' jest ustawiany zgodnie z flagą w konfiguracji.
      *
-     * @param simulation      The {@link Simulation} instance to gather data from. Must not be null.
-     * @param simProps        The {@link SimulationProperties} containing configuration details (like save flag, dimensions). Must not be null.
-     * @param fileSaveService The {@link IFileSaveService} used for prompting the user during manual snapshot export. Must not be null.
-     * @param gson            The {@link Gson} instance used for JSON serialization/deserialization. Must not be null.
-     * @throws NullPointerException if any parameter is null.
+     * @param simulation      Instancja {@link Simulation}.
+     * @param simProps        Obiekt {@link SimulationProperties}.
+     * @param fileSaveService Serwis do ręcznego zapisu plików (przekazywany do persistence).
+     * @param gson            Instancja Gson do serializacji JSON (przekazywana do persistence).
+     * @param calculator      Instancja {@link StatisticsCalculator}.
+     * @param alertService    Serwis do wyświetlania powiadomień.
+     * @param messageService  Serwis do pobierania zlokalizowanych wiadomości.
      */
-    public StatisticsManager(Simulation simulation, SimulationProperties simProps, IFileSaveService fileSaveService, Gson gson) {
+    public StatisticsManager(Simulation simulation, SimulationProperties simProps,
+                             IFileSaveService fileSaveService, Gson gson,
+                             StatisticsCalculator calculator, IAlertService alertService,
+                             IMessageService messageService) {
         this.simulation = Objects.requireNonNull(simulation, "Simulation cannot be null");
         this.simProps = Objects.requireNonNull(simProps, "SimulationProperties cannot be null");
-        this.fileSaveService = Objects.requireNonNull(fileSaveService, "FileSaveService cannot be null");
-        this.gson = Objects.requireNonNull(gson, "Gson instance cannot be null");
+        this.calculator = Objects.requireNonNull(calculator, "StatisticsCalculator cannot be null");
+        this.alertService = Objects.requireNonNull(alertService, "AlertService cannot be null");
+        this.messageService = Objects.requireNonNull(messageService, "MessageService cannot be null");
+
+        // 1. Ustaw początkowy stan włącznika zgodnie z konfiguracją
         this.isCollectingData = simProps.getSaveStatisticsFlag();
-        if (this.isCollectingData) {
-            setupStatisticsDirectory();
+
+        // 2. ZAWSZE spróbuj zainicjalizować komponent zapisu
+        IStatisticsPersistenceService tempPersistenceService = null;
+        try {
+            System.out.println("Initializing statistics persistence component..."); // Log
+            tempPersistenceService = new JsonFileStatisticsPersistence(
+                    Objects.requireNonNull(gson),
+                    Objects.requireNonNull(fileSaveService),
+                    this.messageService,
+                    this.simProps,
+                    MAIN_STATS_DIR_NAME
+            );
+            this.persistenceInitializedSuccessfully = true; // Oznacz sukces inicjalizacji
+            System.out.println("Statistics persistence initialized successfully. Path: " + tempPersistenceService.getStatisticsDirectoryPath()); // Log
+
+        } catch (IOException e) {
+            this.persistenceInitializedSuccessfully = false; // Inicjalizacja nieudana
+            String specificError = e.getMessage() != null ? e.getMessage() : "Unknown I/O Error";
+            System.err.println("FATAL: Failed to initialize statistics directory: " + specificError);
+            e.printStackTrace();
+            // Pokaż alert, ale tylko jeśli użytkownik *chciał* zapisywać statystyki
+            if (simProps.getSaveStatisticsFlag()) {
+                alertService.showAlert(IAlertService.AlertType.WARNING,
+                        messageService.getMessage("warning.title"),
+                        messageService.getMessage("error.stats.init.io.header"),
+                        messageService.getFormattedMessage("error.stats.init.io.content", specificError)
+                );
+            } else {
+                System.out.println("Statistics saving was disabled in config, directory creation failed silently: " + specificError);
+            }
+            // Mimo błędu inicjalizacji, symulacja może kontynuować bez zapisu statystyk
+
+        } catch (Exception e) {
+            this.persistenceInitializedSuccessfully = false; // Inicjalizacja nieudana
+            System.err.println("FATAL: Unexpected error initializing statistics persistence: " + e.getMessage());
+            e.printStackTrace();
+            // Pokaż alert, ale tylko jeśli użytkownik *chciał* zapisywać statystyki
+            if (simProps.getSaveStatisticsFlag()) {
+                alertService.showAlert(IAlertService.AlertType.ERROR,
+                        messageService.getMessage("error.title"),
+                        messageService.getMessage("error.stats.init.fail")); // Ogólny błąd inicjalizacji
+            }
         }
+        this.persistenceService = tempPersistenceService; // Przypisz zainicjalizowany serwis (lub null, jeśli błąd)
+
+        // 3. Loguj ostateczny stan
+        System.out.println("StatisticsManager initialized. Initial collectingData state: " + this.isCollectingData +
+                ", Persistence component available: " + this.persistenceInitializedSuccessfully);
     }
 
+
     /**
-     * Toggles the automatic daily statistics collection and saving feature on or off.
-     * If enabling collection, it ensures the statistics directory is created if it doesn't exist.
+     * Przełącza stan automatycznego zbierania i zapisywania statystyk dziennych.
+     * Informuje użytkownika o zmianie statusu.
+     * Nie pozwala włączyć, jeśli inicjalizacja komponentu zapisu zawiodła.
      */
     public void toggleDataCollection() {
-        isCollectingData = !isCollectingData;
-        if (isCollectingData && statisticsDirectory == null) {
-            setupStatisticsDirectory();
-        }
-        System.out.println("Statistics data collection toggled: " + (isCollectingData ? "On" : "Off"));
-    }
-
-    /**
-     * Checks if automatic daily statistics collection and saving is currently enabled.
-     * This method is thread-safe for reading the volatile flag.
-     *
-     * @return {@code true} if data collection and saving is enabled, {@code false} otherwise.
-     */
-    public boolean isCollectingData() {
-        return isCollectingData;
-    }
-
-    /**
-     * Creates a snapshot of the current simulation statistics at the current simulation day.
-     * It queries the {@link Simulation} state for animal lists, map state, and current day.
-     * Calculates various metrics (averages, counts) and identifies the current top genotypes,
-     * caching the latter for efficient retrieval.
-     * <p>
-     * **Synchronization Note:** This method internally synchronizes access to its cached top genotypes list.
-     * However, it relies on the caller to ensure that access to the underlying {@link Simulation} state
-     * (e.g., animal lists, map data) is performed in a thread-safe manner, typically by calling this method
-     * from within a synchronized block or a sequentially executed listener (like a DayEndListener).
-     * </p>
-     *
-     * @return A {@link SimulationStatisticsSnapshot} containing the calculated statistics for the current moment.
-     *         Returns {@code null} if essential data (like the simulation map) is currently unavailable.
-     */
-    public synchronized SimulationStatisticsSnapshot createAndCacheStatisticsSnapshot() {
-        AbstractWorldMap currentMap = simulation.getMap();
-        int currentDay = simulation.getCurrentDay();
-        if (currentMap == null) {
-            System.err.println("StatisticsManager: Cannot create snapshot, map is null.");
-            return null;
-        }
-
-        List<Animal> currentAnimals = simulation.getAnimals(); // Simulation returns synchronized list/copy
-        List<Animal> currentDeadAnimals = simulation.getDeadAnimals(); // Simulation returns synchronized list/copy
-
-        double avgEnergy = calculateAverageEnergy(currentAnimals);
-        double avgLifespan = calculateAverageLifespan(currentDeadAnimals);
-        double avgChildren = calculateAverageChildren(currentAnimals);
-        int emptyFieldsCount = calculateEmptyFieldsCount(currentMap);
-        Map<String, Integer> genotypeCounts = calculateGenotypeCounts(currentAnimals);
-
-        this.currentTopGenotypes = calculateTopGenotypes(genotypeCounts);
-
-        return new SimulationStatisticsSnapshot(
-                currentDay,
-                currentAnimals.size(),
-                currentMap.getPlants().size(), // Assumes map.getPlants() is safe or returns copy/unmodifiable
-                avgEnergy,
-                avgLifespan,
-                avgChildren,
-                emptyFieldsCount,
-                genotypeCounts,
-                simProps.getConfigName()
-        );
-    }
-
-    /**
-     * Returns a defensive copy of the currently cached list of the top N ({@value #TOP_GENOTYPE_COUNT})
-     * most frequent genotype strings, sorted by frequency in descending order.
-     * This list is updated whenever {@link #createAndCacheStatisticsSnapshot()} is successfully called.
-     * Access to the internal cache is synchronized.
-     *
-     * @return A new {@link List} containing the top genotype strings (formatted according to {@link GenotypeFormatter}).
-     *         Returns an empty list if no genotypes are cached or available.
-     */
-    public synchronized List<String> getCurrentTopGenotypes() {
-        return new ArrayList<>(this.currentTopGenotypes);
-    }
-
-    /**
-     * Saves the provided statistics snapshot to a JSON file within the designated statistics directory
-     * for this simulation run. Files are named based on the simulation day (e.g., `day_00123.json`).
-     * This method performs no action if automatic data collection (`isCollectingData`) is disabled,
-     * if the statistics directory hasn't been successfully created, or if the provided snapshot is null.
-     * Uses the injected {@link Gson} instance for serialization.
-     *
-     * @param snapshot The {@link SimulationStatisticsSnapshot} to save. If null, the method does nothing.
-     */
-    public void saveDailyStatistics(SimulationStatisticsSnapshot snapshot) {
-        if (!isCollectingData || statisticsDirectory == null || snapshot == null) {
+        // Sprawdź, czy próba włączenia jest możliwa (inicjalizacja musiała się powieść)
+        if (!persistenceInitializedSuccessfully && !isCollectingData) { // Chcemy włączyć (isCollectingData jest false), ale inicjalizacja zawiodła
+            alertService.showAlert(IAlertService.AlertType.WARNING,
+                    messageService.getMessage("warning.title"),
+                    messageService.getMessage("warning.stats.init.failed.cant.enable"));
             return;
         }
-        String filename = String.format("day_%05d.json", snapshot.day());
-        File outputFile = new File(statisticsDirectory, filename);
 
-        try (Writer writer = new FileWriter(outputFile)) {
-            gson.toJson(snapshot, writer);
-        } catch (IOException e) {
-            System.err.println("Error saving daily statistics for day " + snapshot.day() + " to " + outputFile.getPath() + ": " + e.getMessage());
-        }
+        // Jeśli inicjalizacja się powiodła LUB chcemy wyłączyć (isCollectingData jest true), możemy przełączyć
+        isCollectingData = !isCollectingData;
+        System.out.println("Statistics data collection toggled: " + (isCollectingData ? "On" : "Off"));
+
+        // Informuj użytkownika o nowym stanie
+        String statusKey = isCollectingData ? "status.on" : "status.off";
+        String status = messageService.getFormattedMessage(statusKey, statusKey.toUpperCase());
+        alertService.showAlert(IAlertService.AlertType.INFO,
+                messageService.getMessage("info.title"),
+                messageService.getFormattedMessage("info.logging.status", status));
     }
 
     /**
-     * Creates a statistics snapshot of the current simulation state, prompts the user
-     * via the injected {@link IFileSaveService} to choose a file location and name, and saves
-     * the snapshot as a JSON file to the selected path using the injected {@link Gson} instance.
-     *
-     * @throws IOException           If the snapshot generation fails (returns null) or if an error occurs during file writing.
-     * @throws IllegalStateException If the {@link IFileSaveService} was not properly initialized or encounters an issue (though unlikely with DI).
+     * Sprawdza, czy automatyczne zbieranie i zapisywanie statystyk jest aktualnie włączone
+     * ORAZ czy inicjalizacja komponentu zapisu się powiodła.
+     * @return {@code true} jeśli zbieranie danych jest włączone i możliwe, {@code false} w przeciwnym razie.
      */
-    public void takeSnapshot() throws IOException, IllegalStateException {
-        SimulationStatisticsSnapshot currentSnapshot = createAndCacheStatisticsSnapshot();
-        if (currentSnapshot == null) {
-            System.err.println("Failed to take snapshot: Could not create current statistics snapshot.");
-            throw new IOException("Could not generate statistics snapshot.");
+    public boolean isCollectingData() {
+        // Zwraca true tylko jeśli użytkownik chce (isCollectingData) ORAZ komponent jest dostępny
+        return isCollectingData && persistenceInitializedSuccessfully;
+    }
+
+    /**
+     * Generuje bieżącą migawkę statystyk za pomocą wstrzykniętego kalkulatora.
+     * @return {@link Optional} zawierający {@link SimulationStatisticsSnapshot}, lub pusty {@code Optional}.
+     */
+    public Optional<SimulationStatisticsSnapshot> generateCurrentSnapshot() {
+        if (simulation == null) {
+            return Optional.empty();
+        }
+        // Nie sprawdzamy już tutaj simulation.getAnimals().isEmpty(),
+        // ponieważ StatisticsCalculator może obliczyć migawkę nawet bez zwierząt (np. sam dzień).
+        return Optional.ofNullable(calculator.calculateSnapshot(simulation));
+    }
+
+    /**
+     * Generuje i deleguje zapis dziennej migawki statystyk, *jeśli* zbieranie danych jest włączone
+     * i serwis persystencji jest dostępny i poprawnie zainicjalizowany.
+     */
+    public void generateAndSaveDailyStatisticsIfNeeded() {
+        // Użyj isCollectingData(), które sprawdza OBA warunki (włącznik ORAZ sukces inicjalizacji)
+        if (!isCollectingData()) {
+            return;
+        }
+        // Dodatkowe sprawdzenie, czy persistenceService nie jest null (na wszelki wypadek)
+        if (persistenceService == null){
+            System.err.println("Error: generateAndSaveDailyStatisticsIfNeeded called but persistenceService is null.");
+            return;
         }
 
-        String timestamp = LocalDateTime.now().format(SNAPSHOT_TIMESTAMP_FORMATTER);
-        String defaultFilename = String.format("snapshot_%s_day%d_%s.json",
-                simProps.getConfigName(), currentSnapshot.day(), timestamp);
+        Optional<SimulationStatisticsSnapshot> snapshotOpt = generateCurrentSnapshot();
 
-        File file = fileSaveService.selectSaveFile(defaultFilename, "JSON files (*.json)", "*.json");
-
-        if (file != null) {
-            try (Writer writer = new FileWriter(file)) {
-                gson.toJson(currentSnapshot, writer);
-                System.out.println("Snapshot saved to: " + file.getAbsolutePath());
-            } catch (IOException e) {
-                System.err.println("Error writing snapshot to file: " + file.getAbsolutePath());
-                throw e;
+        snapshotOpt.ifPresent(snapshot -> {
+            try {
+                persistenceService.saveDailySnapshot(snapshot);
+            } catch (IOException | IllegalStateException e) {
+                System.err.println("Error saving daily statistics for day " + snapshot.day() + ": " + e.getMessage());
+                // Można dodać alert, ale może być zbyt częsty
+            } catch (Exception e) {
+                System.err.println("Unexpected error during daily statistics save: " + e.getMessage());
+                e.printStackTrace();
             }
-        } else {
-            System.out.println("Snapshot save cancelled by user.");
-        }
+        });
     }
 
-    // --- Private Helper Methods ---
+    /**
+     * Generuje migawkę statystyk i inicjuje proces ręcznego zapisu przez użytkownika,
+     * pod warunkiem, że komponent zapisu został poprawnie zainicjalizowany.
+     * @throws IllegalStateException Jeśli komponent zapisu nie jest dostępny.
+     */
+    public void generateAndSaveSnapshotManually() throws IllegalStateException {
+        // Kluczowy warunek: czy komponent zapisu jest dostępny?
+        if (!persistenceInitializedSuccessfully) {
+            alertService.showAlert(IAlertService.AlertType.ERROR,
+                    messageService.getMessage("error.title"),
+                    messageService.getMessage("error.snapshot.persistence.unavailable"));
+            return;
+        }
+        // Dodatkowe zabezpieczenie
+        if (persistenceService == null){
+            System.err.println("Error: generateAndSaveSnapshotManually called but persistenceService is null.");
+            alertService.showAlert(IAlertService.AlertType.ERROR,
+                    messageService.getMessage("error.title"),
+                    messageService.getMessage("error.stats.component.unavailable"));
+            return;
+        }
 
-    /** Sets up the directory structure for storing daily statistics files. */
-    private void setupStatisticsDirectory() {
+        Optional<SimulationStatisticsSnapshot> snapshotOpt = generateCurrentSnapshot();
+
+        if (snapshotOpt.isEmpty()) {
+            System.err.println("Failed to save snapshot manually: Could not generate statistics snapshot.");
+            alertService.showAlert(IAlertService.AlertType.ERROR,
+                    messageService.getMessage("error.title"),
+                    messageService.getMessage("error.snapshot.generate"));
+            return;
+        }
+
+        SimulationStatisticsSnapshot currentSnapshot = snapshotOpt.get();
+
         try {
-            File mainStatsDir = new File(MAIN_STATS_DIR_NAME);
-            if (!mainStatsDir.exists() && !mainStatsDir.mkdirs()) { disableCollectionOnError("main stats dir"); return; }
-            String timestamp = LocalDateTime.now().format(DIR_TIMESTAMP_FORMATTER);
-            String safeConfigName = simProps.getConfigName().replaceAll("[^a-zA-Z0-9_\\-]", "_");
-            String dirName = safeConfigName + "_" + timestamp;
-            statisticsDirectory = new File(mainStatsDir, dirName);
-            if (!statisticsDirectory.exists() && !statisticsDirectory.mkdirs()) { disableCollectionOnError("simulation specific dir"); }
-            else { System.out.println("Statistics will be saved to: " + statisticsDirectory.getAbsolutePath()); }
-        } catch (Exception e) { disableCollectionOnError("Exception: " + e.getMessage()); e.printStackTrace(); }
-    }
+            // Wywołaj metodę serwisu persystencji
+            IStatisticsPersistenceService.SaveResult result = persistenceService.saveManualSnapshot(currentSnapshot);
 
-    /** Disables data collection and logs an error message. Called when directory setup fails. */
-    private void disableCollectionOnError(String context) {
-        this.isCollectingData = false; this.statisticsDirectory = null;
-        System.err.println("Failed to create statistics directory (" + context + "). Automatic daily saving disabled.");
-    }
-
-    /** Calculates average energy. Requires safe list access/iteration. */
-    private double calculateAverageEnergy(List<Animal> animals) {
-        synchronized (animals) {
-            if (animals.isEmpty()) return 0.0;
-            return animals.stream().mapToInt(Animal::getEnergy).average().orElse(0.0);
+            // Poinformuj użytkownika na podstawie wyniku zwróconego przez serwis
+            switch (result) {
+                case SUCCESS:
+                    alertService.showAlert(IAlertService.AlertType.INFO,
+                            messageService.getMessage("info.title"),
+                            messageService.getMessage("info.snapshot.manual.saved"));
+                    break;
+                case CANCELLED:
+                    // Nie pokazuj alertu przy anulowaniu, to normalne zachowanie
+                    // alertService.showAlert(IAlertService.AlertType.INFO,
+                    //        messageService.getMessage("info.title"),
+                    //        messageService.getMessage("info.snapshot.cancelled"));
+                    System.out.println("Manual snapshot save cancelled by user.");
+                    break;
+                case FAILED_IO:
+                    alertService.showAlert(IAlertService.AlertType.ERROR,
+                            messageService.getMessage("error.title"),
+                            messageService.getMessage("error.snapshot.save.io"));
+                    break;
+                case FAILED_OTHER:
+                    alertService.showAlert(IAlertService.AlertType.ERROR,
+                            messageService.getMessage("error.title"),
+                            messageService.getMessage("error.snapshot.save.other"));
+                    break;
+            }
+        } catch (IllegalStateException e) { // Błąd powinien być złapany wyżej, ale na wszelki wypadek
+            System.err.println("IllegalStateException during manual snapshot save: " + e.getMessage());
+            alertService.showAlert(IAlertService.AlertType.ERROR,
+                    messageService.getMessage("error.title"),
+                    messageService.getMessage("error.snapshot.persistence.unavailable"));
+            // Nie rzucaj dalej, aby nie zatrzymać aplikacji
+        } catch (Exception e) { // Inne nieoczekiwane błędy
+            System.err.println("Unexpected error during manual snapshot trigger: " + e.getMessage());
+            alertService.showAlert(IAlertService.AlertType.ERROR,
+                    messageService.getMessage("error.title"),
+                    messageService.getFormattedMessage("error.snapshot.unexpected", e.getMessage()));
+            e.printStackTrace();
         }
-    }
-
-    /** Calculates average lifespan. Requires safe list access/iteration. */
-    private double calculateAverageLifespan(List<Animal> deadAnimals) {
-        synchronized (deadAnimals) {
-            if (deadAnimals.isEmpty()) return 0.0;
-            return deadAnimals.stream()
-                    .mapToInt(animal -> animal.getDeathDate() - animal.getBirthDate())
-                    .filter(lifespan -> lifespan >= 0)
-                    .average().orElse(0.0);
-        }
-    }
-
-    /** Calculates average children count. Requires safe list access/iteration. */
-    private double calculateAverageChildren(List<Animal> animals) {
-        synchronized (animals) {
-            if (animals.isEmpty()) return 0.0;
-            return animals.stream().mapToInt(Animal::getChildrenMade).average().orElse(0.0);
-        }
-    }
-
-    /** Calculates empty fields count. Requires safe map access. */
-    private int calculateEmptyFieldsCount(AbstractWorldMap map) {
-        int totalFields = simProps.getWidth() * simProps.getHeight();
-        Set<Vector2d> occupiedPositions = new HashSet<>();
-        synchronized (map) { // Synchronize access to map's internal state
-            occupiedPositions.addAll(map.getAnimals().keySet());
-            occupiedPositions.addAll(map.getPlants().keySet());
-            if (map instanceof WaterWorld waterMap) { occupiedPositions.addAll(waterMap.getWaterFields().keySet()); }
-        }
-        return Math.max(0, totalFields - occupiedPositions.size());
-    }
-
-    /** Calculates genotype frequencies. Requires safe list access/iteration. */
-    private Map<String, Integer> calculateGenotypeCounts(List<Animal> animals) {
-        synchronized (animals) { // Synchronize iteration over the animal list
-            if (animals.isEmpty()) return Collections.emptyMap();
-            return animals.stream().collect(Collectors.groupingBy(
-                    animal -> GenotypeFormatter.formatGenotype(animal.getGenes()), Collectors.summingInt(animal -> 1) ));
-        }
-    }
-
-    /** Determines the top N most frequent genotypes from the counts map. */
-    private List<String> calculateTopGenotypes(Map<String, Integer> genotypeCounts) {
-        if (genotypeCounts == null || genotypeCounts.isEmpty()) return Collections.emptyList();
-        return genotypeCounts.entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-                .limit(TOP_GENOTYPE_COUNT)
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
     }
 }

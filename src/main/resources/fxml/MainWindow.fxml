@@ -1,32 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.geometry.Insets?>
+<?import java.net.URL?>
 
+<!-- Główny kontener VBox (tło drewna) -->
 <VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
       fx:controller="proj.app.controllers.MainWindowController"
-      spacing="10" alignment="CENTER" style="-fx-padding: 20;">
+      fx:id="mainWindowRoot"
+      alignment="CENTER" style="-fx-padding: 0;" prefHeight="650.0" prefWidth="850.0">
 
-    <Label text="Evolution Simulator" style="-fx-font-size: 24;"/> <!-- Static text, no fx:id needed -->
+    <stylesheets>
+        <URL value="@../css/main-window-styles.css" />
+    </stylesheets>
 
-    <VBox spacing="5" alignment="CENTER">
-        <!-- Added fx:id -->
-        <Label fx:id="selectConfigLabel" text="Select Configuration:" style="-fx-font-size: 14;"/>
-        <HBox spacing="10" alignment="CENTER">
-            <ComboBox fx:id="configSelect" prefWidth="200"/>
-            <!-- Added fx:id -->
+    <!-- StackPane do nałożenia VBoxa z kontrolkami na Region z pergaminem -->
+    <StackPane fx:id="contentAreaPane" alignment="CENTER" VBox.vgrow="ALWAYS">
+        <padding>
+            <Insets top="30" right="50" bottom="30" left="50" />
+        </padding>
+
+        <!-- Region dla tła pergaminu -->
+        <Region fx:id="parchmentRegion" styleClass="parchment-background"/>
+
+        <!-- VBox dla kontrolek -->
+        <VBox fx:id="controlsContainer" spacing="15" alignment="CENTER">
+            <padding>
+                <Insets top="50" right="60" bottom="50" left="60" />
+            </padding>
+
+            <Label fx:id="titleLabel" text="Evolution Simulator"/>
             <Button fx:id="newConfigButton" text="New Configuration" onAction="#handleNewConfig"/>
+            <ComboBox fx:id="configSelect" prefWidth="250"/>
             <Button fx:id="deleteConfigButton" text="Delete Configuration" onAction="#handleDeleteConfig"/>
-        </HBox>
-    </VBox>
+            <!-- Poprawiony Button -->
+            <Button fx:id="startSimulationButton" text="Start Simulation"
+                    onAction="#handleStartSimulation" disable="true"/>
 
-    <Button fx:id="startSimulationButton" text="Start Simulation"
-            onAction="#handleStartSimulation" disable="true"
-            style="-fx-font-size: 16; -fx-padding: 10 20;"/>
+            <Label fx:id="recentSimulationsLabel" text="Recent Simulations"/>
+            <!-- Poprawiony ListView z VBox.vgrow -->
+            <ListView fx:id="recentSimulations" prefHeight="120" maxWidth="350" VBox.vgrow="ALWAYS"/>
 
-    <Separator/>
+        </VBox> <!-- Koniec VBox dla kontrolek -->
+    </StackPane> <!-- Koniec StackPane dla zawartości -->
 
-    <!-- Added fx:id -->
-    <Label fx:id="recentSimulationsLabel" text="Recent Simulations" style="-fx-font-size: 14;"/>
-    <ListView fx:id="recentSimulations" prefHeight="150"/>
-</VBox>
+</VBox> <!-- Koniec głównego VBox -->

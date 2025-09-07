@@ -1,0 +1,21 @@
+/* Plik: resources/css/simulation-styles.css */
+
+/* ... (styl dla .split-pane-divider) ... */
+
+/* Ogólny styl dla kwadratu koloru (teraz obok CheckBoxa) */
+.chart-legend-swatch {
+    /* Rozmiar ustawiony w kodzie Java, ale można dodać tu */
+    /* -fx-pref-width: 10px; */
+    /* -fx-pref-height: 10px; */
+    -fx-background-radius: 2;
+    -fx-border-color: gray;
+    -fx-border-width: 0.5px;
+    -fx-border-radius: 2;
+}
+
+/* Style dla tła poszczególnych kwadratów (swatchy) */
+.chart-series-animals { -fx-background-color: #f3622d; }
+.chart-series-plants { -fx-background-color: #fba71b; }
+.chart-series-avg_energy { -fx-background-color: #57b757; }
+.chart-series-avg_lifespan { -fx-background-color: #41a9c9; }
+.chart-series-avg_children { -fx-background-color: #9268e3; }

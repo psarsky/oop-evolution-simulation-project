@@ -1,21 +1,19 @@
 package proj.app.controllers;
 
 // Imports needed for ReadOnly*Wrapper and ReadOnly*Property
-import javafx.beans.property.BooleanProperty; // Keep for return type clarity in Javadoc? Or change to ReadOnlyBooleanProperty
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty; // Import ReadOnly version
 import javafx.beans.property.ReadOnlyBooleanWrapper; // Import Wrapper
-import javafx.beans.property.SimpleBooleanProperty; // Keep if used elsewhere, otherwise remove
 import javafx.beans.property.SimpleDoubleProperty;
 import proj.app.AppConstants; // Use constants
-import proj.app.SimulationController;
+import proj.app.SimulationEngine;
 import proj.simulation.SimulationProperties;
 
 import java.util.Objects;
 
 /**
  * Manages UI interactions related to the simulation's lifecycle control (pause/resume, speed).
- * Uses JavaFX properties for UI binding and communicates speed changes to the {@link SimulationController}.
+ * Uses JavaFX properties for UI binding and communicates speed changes to the {@link SimulationEngine}.
  * Uses constants from {@link AppConstants} for slider and delay bounds.
  * Exposes paused and canControl states as ReadOnly properties externally.
  */
@@ -30,7 +28,7 @@ public class SimulationLifecycleManager {
     private static final long MAX_DELAY_MS = AppConstants.MAX_STEP_DELAY_MS;
 
     private final long nominalDelayMs; // Nominal delay from SimulationProperties, clamped
-    private final SimulationController simulationController;
+    private final SimulationEngine simulationEngine;
 
     // --- JavaFX Properties for Binding ---
     // Use ReadOnly*Wrapper for internal control, expose ReadOnly*Property externally
@@ -45,12 +43,12 @@ public class SimulationLifecycleManager {
      * Constructs the SimulationLifecycleManager.
      * Initializes slider value based on properties and sets up listener for slider changes.
      *
-     * @param simulationController The {@link SimulationController} instance to manage. Must not be null.
+     * @param simulationEngine The {@link SimulationEngine} instance to manage. Must not be null.
      * @param properties           The {@link SimulationProperties} used to determine nominal speed. Must not be null.
      * @throws NullPointerException if simulationController or properties is null.
      */
-    public SimulationLifecycleManager(SimulationController simulationController, SimulationProperties properties) {
-        this.simulationController = Objects.requireNonNull(simulationController, "SimulationController cannot be null");
+    public SimulationLifecycleManager(SimulationEngine simulationEngine, SimulationProperties properties) {
+        this.simulationEngine = Objects.requireNonNull(simulationEngine, "SimulationController cannot be null");
         Objects.requireNonNull(properties, "SimulationProperties cannot be null");
 
         // Set nominal delay, clamped by global bounds
@@ -62,18 +60,17 @@ public class SimulationLifecycleManager {
 
         // Listener updates SimulationController delay when slider changes
         this.speedSliderValueProperty.addListener((obs, oldVal, newVal) -> {
-            if (this.simulationController != null && newVal != null) {
+            if (this.simulationEngine != null && newVal != null) {
                 long calculatedDelay = mapSliderValueToDelay(newVal.doubleValue());
-                this.simulationController.setStepDelay(calculatedDelay);
+                this.simulationEngine.setStepDelay(calculatedDelay);
             }
         });
-        updateProperties(); // Set initial property states
     }
 
     /** Toggles the simulation between paused and running states, if controllable. */
     public void togglePause() {
-        if (simulationController.isStopped()) return;
-        simulationController.togglePause();
+        if (simulationEngine.isStopped()) return;
+        simulationEngine.togglePause();
         updateProperties();
     }
 
@@ -83,8 +80,8 @@ public class SimulationLifecycleManager {
      * @return {@code true} if the simulation was running and is now paused by this call, {@code false} otherwise.
      */
     public boolean pauseForAction() {
-        if (simulationController.isRunning()) {
-            simulationController.togglePause();
+        if (simulationEngine.isRunning()) {
+            simulationEngine.togglePause();
             updateProperties();
             try { Thread.sleep(50); } catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
             return true;
@@ -94,8 +91,8 @@ public class SimulationLifecycleManager {
 
     /** Resumes the simulation if it was paused by {@link #pauseForAction()} and hasn't stopped. */
     public void resumeAfterAction() {
-        if (!simulationController.isStopped() && !simulationController.isRunning()) {
-            simulationController.togglePause();
+        if (!simulationEngine.isStopped() && !simulationEngine.isRunning()) {
+            simulationEngine.togglePause();
             updateProperties();
         }
     }
@@ -107,8 +104,8 @@ public class SimulationLifecycleManager {
 
     /** Updates internal JavaFX properties based on the SimulationController's state. */
     private void updateProperties() {
-        boolean isStopped = simulationController.isStopped();
-        boolean isRunning = simulationController.isRunning();
+        boolean isStopped = simulationEngine.isStopped();
+        boolean isRunning = simulationEngine.isRunning();
         // Use the wrapper's set() method for internal updates
         pausedProperty.set(!isRunning && !isStopped);
         canControlProperty.set(!isStopped);

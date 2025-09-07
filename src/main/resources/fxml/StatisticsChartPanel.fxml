@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.chart.*?>
+<?import javafx.scene.layout.*?>
+
+<!-- Korzeń to teraz sam wykres lub prosty kontener jak BorderPane -->
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="proj.app.controllers.StatisticsChartPanelController">
+    <center>
+        <!-- Wykres Liniowy zajmuje całe centrum -->
+        <LineChart fx:id="statisticsChart" title="Simulation Statistics Over Time" animated="false" createSymbols="false" legendVisible="false"> <!-- Ukryto domyślną legendę -->
+            <xAxis>
+                <NumberAxis fx:id="dayAxis" label="Day" autoRanging="true" forceZeroInRange="false"/>
+            </xAxis>
+            <yAxis>
+                <NumberAxis fx:id="valueAxis" label="Value" autoRanging="true" />
+            </yAxis>
+        </LineChart>
+    </center>
+</BorderPane>

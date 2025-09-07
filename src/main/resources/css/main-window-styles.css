@@ -1,0 +1,143 @@
+/* Plik: resources/css/main-window-styles.css */
+
+/* Styl dla głównego kontenera okna (tło drewna) */
+#mainWindowRoot {
+    -fx-background-image: url('../images/background.png');
+    -fx-background-size: cover;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center center;
+}
+
+/* Styl dla StackPane zawierającego Region i kontrolki */
+#contentAreaPane {
+    -fx-background-color: transparent;
+}
+
+/* Styl dla Region pergaminu */
+.parchment-background {
+    -fx-background-image: url('../images/content_background.png');
+    -fx-background-size: contain; /* Zachowuje proporcje obrazu w dostępnym miejscu */
+    -fx-background-position: center center;
+    -fx-background-repeat: no-repeat;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 20, 0.3, 0, 0);
+}
+
+/* Styl dla kontenera kontrolek WEWNĄTRZ pergaminu */
+#controlsContainer {
+    -fx-background-color: transparent; /* Kontener sam w sobie przezroczysty */
+    -fx-alignment: center;
+    -fx-font-family: "Papyrus", "Garamond", serif;
+    -fx-font-size: 13px;
+    -fx-text-fill: #3a2b1a; /* Kolor tekstu */
+    -fx-font-weight: bold; /* Pogrubiona czcionka dla wszystkich elementów wewnątrz */
+}
+
+/* --- Style dla specyficznych kontrolek --- */
+
+/* Etykiety */
+#controlsContainer .label {
+    /* Dziedziczy styl z #controlsContainer, w tym kolor i pogrubienie */
+    -fx-background-color: transparent; /* Upewnienie się, że etykiety są przezroczyste */
+}
+
+/* Przyciski */
+#controlsContainer .button {
+    -fx-background-color: transparent; /* <-- ZMIANA: Przezroczyste tło */
+    -fx-text-fill: #3a2b1a; /* Kolor tekstu przycisku */
+    -fx-border-color: derive(#3a2b1a, -20%); /* Obramowanie dla widoczności */
+    -fx-border-width: 1px;
+    -fx-background-radius: 5px;
+    -fx-border-radius: 5px;
+    /* font-weight: bold; jest dziedziczone */
+    -fx-font-size: 14px;
+    /* Efekt cienia może być mniej widoczny na przezroczystym tle */
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 5, 0.1, 0, 1);
+    -fx-padding: 8px 15px;
+}
+
+#controlsContainer .button:hover {
+    /* Lekkie podświetlenie tła przy najechaniu dla feedbacku */
+    -fx-background-color: rgba(200, 160, 100, 0.15); /* Półprzezroczysty kolor bazowy */
+    -fx-border-color: derive(#3a2b1a, 0%); /* Wzmocnienie ramki */
+}
+
+#controlsContainer .button:pressed {
+    /* Lekkie przyciemnienie przy naciśnięciu */
+    -fx-background-color: rgba(200, 160, 100, 0.25);
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 3, 0.05, 0, 1);
+}
+
+/* ComboBox */
+#controlsContainer .combo-box {
+    -fx-background-color: transparent; /* <-- ZMIANA: Przezroczyste tło */
+    -fx-border-color: derive(#3a2b1a, -20%); /* Obramowanie dla widoczności */
+    -fx-border-width: 1px;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+    /* Dziedziczy pogrubioną czcionkę */
+    /* Upewnij się, że strzałka i tekst są widoczne */
+    -fx-text-fill: #3a2b1a;
+}
+
+/* Lista rozwijana w ComboBox (pozostawiamy tło dla czytelności) */
+#controlsContainer .combo-box .list-cell {
+    -fx-background-color: #e8d8b8;
+    -fx-padding: 5px 10px;
+    /* Domyślnie normalna czcionka, pogrubiona dziedziczona może być za mocna */
+    -fx-font-weight: normal;
+    -fx-text-fill: #3a2b1a;
+}
+#controlsContainer .combo-box .list-cell:hover {
+    -fx-background-color: #d8c8a8;
+}
+#controlsContainer .combo-box .list-cell:filled:selected {
+    -fx-background-color: #c8a064;
+    -fx-text-fill: white;
+    -fx-font-weight: bold; /* Pogrubienie dla zaznaczonego */
+}
+
+/* ListView */
+#controlsContainer .list-view {
+    -fx-background-color: transparent; /* <-- ZMIANA: Przezroczyste tło */
+    -fx-border-color: derive(#3a2b1a, -20%); /* Obramowanie dla widoczności */
+    -fx-border-width: 1px;
+    -fx-background-insets: 0;
+    -fx-padding: 1px;
+}
+
+/* Komórki w ListView */
+#controlsContainer .list-view .list-cell {
+    -fx-background-color: transparent; /* Tło komórki przezroczyste */
+    -fx-font-weight: normal; /* Normalna grubość dla czytelności */
+    -fx-padding: 4px 8px;
+    -fx-text-fill: #3a2b1a; /* Kolor tekstu w liście */
+}
+
+/* Zaznaczony element listy (pozostawiamy tło dla widoczności zaznaczenia) */
+#controlsContainer .list-view .list-cell:filled:selected,
+#controlsContainer .list-view .list-cell:filled:selected:hover {
+    -fx-background-color: #c8a064;
+    -fx-text-fill: white;
+    -fx-font-weight: bold; /* Pogrubienie tylko dla zaznaczonego */
+}
+
+/* Element listy pod kursorem (niezaznaczony) */
+#controlsContainer .list-view .list-cell:filled:hover {
+    /* Lekkie podświetlenie dla feedbacku */
+    -fx-background-color: rgba(200, 160, 100, 0.15);
+    -fx-text-fill: #3a2b1a; /* Upewnij się, że tekst jest nadal widoczny */
+}
+
+/* Tytuł główny aplikacji */
+#titleLabel {
+    -fx-font-size: 28px; /* Można dostosować */
+    -fx-font-family: "Papyrus", "Garamond", serif;
+    -fx-text-fill: #543d26;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 5, 0.3, 0, 2);
+    -fx-padding: 0 0 10 0;
+    /* font-weight: bold; jest dziedziczone */
+    -fx-background-color: transparent; /* Upewnienie się */
+}
+
+/* Separator - usunięty z FXML, więc reguła nie jest już potrzebna */
+/* #controlsContainer .separator .line { ... } */

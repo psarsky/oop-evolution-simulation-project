@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * the simulation based on external commands. It also allows dynamic adjustment of the
  * time delay between simulation steps via the {@link #setStepDelay(long)} method.
  */
-public class SimulationController implements Runnable {
+public class SimulationEngine implements Runnable {
 
     private final Simulation simulation; // The simulation logic instance to control
     private final SimulationProperties simulationProperties; // Configuration properties
@@ -40,7 +40,7 @@ public class SimulationController implements Runnable {
      * @param simulation           The {@link Simulation} instance containing the core logic and state. Must not be null.
      * @param simulationProperties The {@link SimulationProperties} containing configuration like initial step delay. Must not be null.
      */
-    public SimulationController(Simulation simulation, SimulationProperties simulationProperties) {
+    public SimulationEngine(Simulation simulation, SimulationProperties simulationProperties) {
         this.simulation = Objects.requireNonNull(simulation, "Simulation cannot be null");
         this.simulationProperties = Objects.requireNonNull(simulationProperties, "SimulationProperties cannot be null");
         // Initialize delay from properties, ensuring it's within the allowed bounds
