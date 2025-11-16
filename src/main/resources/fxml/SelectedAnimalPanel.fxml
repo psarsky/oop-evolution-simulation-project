@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<!-- Zmieniono korzeń z TitledPane na VBox -->
+<VBox spacing="5" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="proj.app.controllers.SelectedAnimalPanelController">
+    <padding>
+        <Insets top="5" right="10" bottom="5" left="10"/>
+    </padding>
+
+    <!-- Dodano Label jako tytuł -->
+    <Label fx:id="panelTitleLabel" style="-fx-font-weight: bold; -fx-padding: 0 0 5 0;" text="Selected Animal"/>
+
+    <GridPane vgap="5" hgap="10">
+        <!-- Reszta GridPane bez zmian -->
+        <Label fx:id="selectedAnimalEnergyLabel" text="Energy:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <Label fx:id="selectedAnimalEnergy" text="-" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+        <Label fx:id="selectedAnimalAgeLabel" text="Age:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <Label fx:id="selectedAnimalAge" text="-" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+        <Label fx:id="selectedAnimalChildrenLabel" text="Children:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <Label fx:id="selectedAnimalChildren" text="-" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+        <Label fx:id="selectedAnimalPlantsEatenLabel" text="Plants Eaten:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <Label fx:id="selectedAnimalPlantsEaten" text="-" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+        <Label fx:id="selectedAnimalGenotypeLabel" text="Genotype:" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+        <Label fx:id="selectedAnimalGenotype" wrapText="true" text="-" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+        <Label fx:id="selectedAnimalActiveGeneLabel" text="Active Gene:" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+        <Label fx:id="selectedAnimalActiveGene" text="-" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+        <Label fx:id="selectedAnimalDescendantsLabel" text="Descendants:" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
+        <Label fx:id="selectedAnimalDescendants" text="-" GridPane.columnIndex="1" GridPane.rowIndex="6"/>
+        <Label fx:id="selectedAnimalDeathDateLabel" text="Death Day:" GridPane.columnIndex="0" GridPane.rowIndex="7"/>
+        <Label fx:id="selectedAnimalDeathDate" text="-" GridPane.columnIndex="1" GridPane.rowIndex="7"/>
+    </GridPane>
+</VBox>

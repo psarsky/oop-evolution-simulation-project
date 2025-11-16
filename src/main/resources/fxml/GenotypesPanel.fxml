@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox spacing="5" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="proj.app.controllers.GenotypesPanelController"
+      style="-fx-padding: 0 0 0 10;"> <!-- Dodano lewy padding dla odstępu -->
+    <Label fx:id="popularGenotypesLabel" text="Most Popular Genotypes:" style="-fx-font-weight: bold;"/>
+    <TextArea fx:id="popularGenotypes"
+              editable="false"
+              wrapText="true"
+              prefRowCount="5"
+              minHeight="80" VBox.vgrow="ALWAYS" /> <!-- VGrow pozwala mu się rozciągnąć -->
+</VBox>

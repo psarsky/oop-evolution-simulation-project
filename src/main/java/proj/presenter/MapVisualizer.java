@@ -2,113 +2,93 @@ package proj.presenter;
 
 import proj.model.maps.AbstractWorldMap;
 import proj.util.Vector2d;
+import java.util.Objects;
 
 /**
- * The MapVisualizer converts the {@link AbstractWorldMap} into a string
- * representation for easier visualization and debugging.
- *
- * This class provides methods to draw a specific region of the map and represents
- * its contents in a textual format, including grid lines, objects, and empty cells.
+ * Utility class responsible for generating a textual representation of an {@link AbstractWorldMap}.
+ * It draws a grid corresponding to a specified rectangular region of the map, displaying
+ * the elements present at each position using their `toString()` representation.
+ * Useful for console output and debugging.
  *
  * @author apohllo, idzik
  */
 public class MapVisualizer {
-    // Constants for visualizing empty cells and grid lines
-    private static final String EMPTY_CELL = " ";
-    private static final String FRAME_SEGMENT = "-";
-    private static final String CELL_SEGMENT = "|";
-    private final AbstractWorldMap map;
+
+    private static final String EMPTY_CELL = " ";       // Character for empty map cells.
+    private static final String FRAME_SEGMENT = "-";    // Character for horizontal frame lines.
+    private static final String CELL_SEGMENT = "|";     // Character for vertical cell separators.
+    private final AbstractWorldMap map;                 // The map instance to visualize.
 
     /**
-     * Initializes the MapVisualizer with an instance of the map to visualize.
+     * Constructs a {@code MapVisualizer} associated with a specific map.
      *
-     * @param map The map instance that will be visualized.
+     * @param map The non-null {@link AbstractWorldMap} to be visualized.
      */
     public MapVisualizer(AbstractWorldMap map) {
-        this.map = map;
+        this.map = Objects.requireNonNull(map, "Map cannot be null for MapVisualizer");
     }
 
     /**
-     * Converts the selected region of the map into a string representation.
-     * The region is defined by two corners: the lower left and the upper right.
-     * It is assumed that map indices will be represented with up to two characters.
+     * Generates a string representation of a rectangular region of the map.
+     * The output includes row and column headers, grid lines, and the string
+     * representation of the element at each cell (or an empty space).
+     * Assumes map indices fit within the formatted width.
      *
-     * @param lowerLeft  The lower-left corner of the region to be drawn.
-     * @param upperRight The upper-right corner of the region to be drawn.
-     * @return A string representation of the selected region of the map.
+     * @param lowerLeft  The non-null {@link Vector2d} representing the lower-left corner (inclusive) of the region to draw.
+     * @param upperRight The non-null {@link Vector2d} representing the upper-right corner (inclusive) of the region to draw.
+     * @return A {@link String} containing the textual representation of the specified map region.
      */
     public String draw(Vector2d lowerLeft, Vector2d upperRight) {
+        Objects.requireNonNull(lowerLeft, "LowerLeft boundary cannot be null");
+        Objects.requireNonNull(upperRight, "UpperRight boundary cannot be null");
+        // Basic validation for boundary sanity (optional)
+        // if (!lowerLeft.precedes(upperRight)) { return "Invalid boundaries for drawing."; }
+
         StringBuilder builder = new StringBuilder();
-        for (int i = upperRight.y() + 1; i >= lowerLeft.y() - 1; i--) {
-            // Add the header row for the map
-            if (i == upperRight.y() + 1) {
-                builder.append(drawHeader(lowerLeft, upperRight));
+        // Draw header row (x-coordinates)
+        builder.append(drawHeader(lowerLeft, upperRight));
+
+        // Draw map rows from top (upperRight.y) down to bottom (lowerLeft.y)
+        for (int y = upperRight.y(); y >= lowerLeft.y(); y--) {
+            // Draw row header (y-coordinate)
+            builder.append(String.format("%3d: ", y)); // Format Y coordinate
+            // Draw cells in the row
+            for (int x = lowerLeft.x(); x <= upperRight.x(); x++) {
+                builder.append(CELL_SEGMENT); // Vertical separator
+                // Get object at (x, y) using map's synchronized method
+                Object element = this.map.objectAt(new Vector2d(x, y));
+                builder.append(element != null ? element.toString() : EMPTY_CELL); // Use element's toString or empty cell
             }
-            // Add the row number at the beginning of each row
-            builder.append(String.format("%3d: ", i));
-            for (int j = lowerLeft.x(); j <= upperRight.x() + 1; j++) {
-                // Draw the frame for rows outside the defined map region
-                if (i < lowerLeft.y() || i > upperRight.y()) {
-                    builder.append(drawFrame(j <= upperRight.x()));
-                } else {
-                    // Draw the cell segment and its content (object or empty cell)
-                    builder.append(CELL_SEGMENT);
-                    if (j <= upperRight.x()) {
-                        builder.append(drawObject(new Vector2d(j, i)));
-                    }
-                }
-            }
-            // Add a new line at the end of the row
-            builder.append(System.lineSeparator());
+            builder.append(CELL_SEGMENT); // Closing vertical separator for the row
+            builder.append(System.lineSeparator()); // New line after each row
         }
+
+        // Draw bottom frame (optional, could be added similar to header)
+        // builder.append(drawFooter(lowerLeft, upperRight));
+
         return builder.toString();
     }
 
     /**
-     * Draws a horizontal frame segment for the grid. Appends a separator if
-     * it's not the last segment in the row.
+     * Creates the header string for the map visualization, displaying column (x) indices.
      *
-     * @param innerSegment          Indicates whether the segment is part of the inner grid.
-     * @return                      A string representing a frame segment.
-     */
-    private String drawFrame(boolean innerSegment) {
-        if (innerSegment) {
-            return FRAME_SEGMENT + FRAME_SEGMENT;
-        } else {
-            return FRAME_SEGMENT;
-        }
-    }
-
-    /**
-     * Draws the header row of the map, showing the column indices.
-     *
-     * @param lowerLeft         The lower-left corner of the region.
-     * @param upperRight        The upper-right corner of the region.
-     * @return                  A string representing the header row of the map.
+     * @param lowerLeft  The lower-left corner of the drawing region.
+     * @param upperRight The upper-right corner of the drawing region.
+     * @return The formatted header string.
      */
     private String drawHeader(Vector2d lowerLeft, Vector2d upperRight) {
         StringBuilder builder = new StringBuilder();
-        builder.append(" y\\x ");
-        // Add column indices to the header
-        for (int j = lowerLeft.x(); j < upperRight.x() + 1; j++) {
-            builder.append(String.format("%2d", j));
+        builder.append(" y\\x "); // Label for coordinate axes
+        for (int x = lowerLeft.x(); x <= upperRight.x(); x++) {
+            builder.append(String.format("%2s", x)); // Format X coordinate (adjust width if needed)
         }
-        builder.append(System.lineSeparator());
+        builder.append(System.lineSeparator()); // New line after header
         return builder.toString();
     }
 
-    /**
-     * Draws the object present at a specific position on the map.
-     * If there is no object at the given position, an empty cell is returned.
-     *
-     * @param currentPosition           The position to check for an object.
-     * @return                          A string representation of the object at the given position or an empty cell.
-     */
-    private String drawObject(Vector2d currentPosition) {
-        Object object = this.map.objectAt(currentPosition);
-        if (object != null) {
-            return object.toString();
-        }
-        return EMPTY_CELL;
-    }
+    /*  --- Method stubs for potential frame/footer ---
+        private String drawFrame(boolean innerSegment) { ... }
+        private String drawObject(Vector2d currentPosition) { ... } // Replaced by inline logic in draw()
+        private String drawFooter(Vector2d lowerLeft, Vector2d upperRight) { ... }
+    */
 }

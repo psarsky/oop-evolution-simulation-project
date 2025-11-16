@@ -1,16 +1,12 @@
-/*
-todo:
-add JavaFX display properties
-*/
-
 package proj.model.elements;
 
 import proj.util.Vector2d;
 
 /**
- * Represents a water element in the simulation.
- * Water may serve as an environmental feature or obstacle in the simulation,
- * occupying a specific position on the map.
+ * Represents a Water element in the simulation.
+ * Water typically occupies a fixed position (though it might spread/recede in specific map types like {@link proj.model.maps.WaterWorld})
+ * and acts as an environmental feature or potential obstacle/hazard.
+ * Inherits position handling from {@link AbstractInanimateElement}.
  *
  * @author <a href="https://github.com/psarsky">psarsky</a>
  */
@@ -19,23 +15,32 @@ public class Water extends AbstractInanimateElement {
     /**
      * Constructs a {@code Water} element at the specified position.
      *
-     * @param position The position of the water element on the map as a {@link Vector2d} object.
+     * @param position The non-null {@link Vector2d} position of the water element on the map.
      */
-    public Water(Vector2d position) {super(position);}
+    public Water(Vector2d position) {
+        super(position); // Calls constructor of AbstractInanimateElement
+    }
+
+    /**
+     * {@inheritDoc}
+     * Returns the element type, which is always {@link ElementType#WATER}.
+     * @return {@link ElementType#WATER}.
+     */
+    @Override
+    public ElementType getElementType() {
+        return ElementType.WATER;
+    }
+
 
     /**
      * Provides a string representation of the water element for console display purposes.
-     * The default symbol is '~', but this can be customized during testing
-     * to reduce visual clutter.
+     * The default symbol is '~'.
      *
-     * @return The {@link String} representation of the water element.
+     * @return The {@link String} representation ("~").
      */
     @Override
     public String toString() {
         return "~";
-        // return " ";
+        // return "W"; // Alternative representation
     }
-
-    @Override
-    public ElementType getElementType() {return ElementType.WATER;}
 }

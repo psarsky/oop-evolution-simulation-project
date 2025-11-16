@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox spacing="5" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="proj.app.controllers.StatisticsPanelController">
+    <padding>
+        <Insets top="5" right="10" bottom="5" left="10"/>
+    </padding>
+    <Label fx:id="panelTitleLabel" style="-fx-font-weight: bold; -fx-padding: 0 0 5 0;" text="Simulation Statistics"/>
+    <GridPane vgap="5" hgap="10">
+        <Label fx:id="dayLabel" text="Day:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <Label fx:id="dayCount" text="-" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+        <Label fx:id="animalLabel" text="Animals:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <Label fx:id="animalCount" text="-" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+        <Label fx:id="plantLabel" text="Plants:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <Label fx:id="plantCount" text="-" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+        <Label fx:id="emptyFieldsLabel" text="Empty Fields:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <Label fx:id="emptyFieldsCount" text="-" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+        <!-- USUNIĘTO GENOTYPY -->
+        <Label fx:id="avgEnergyLabel" text="Average Energy:" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
+        <Label fx:id="averageEnergy" text="-" GridPane.columnIndex="1" GridPane.rowIndex="6"/>
+        <Label fx:id="avgLifespanLabel" text="Average Lifespan:" GridPane.columnIndex="0" GridPane.rowIndex="7"/>
+        <Label fx:id="averageLifespan" text="-" GridPane.columnIndex="1" GridPane.rowIndex="7"/>
+        <Label fx:id="avgChildrenLabel" text="Average Children:" GridPane.columnIndex="0" GridPane.rowIndex="8"/>
+        <Label fx:id="averageChildren" text="-" GridPane.columnIndex="1" GridPane.rowIndex="8"/>
+    </GridPane>
+</VBox>

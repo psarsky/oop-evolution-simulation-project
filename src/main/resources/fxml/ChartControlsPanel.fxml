@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?> <!-- Tylko raz na początku -->
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?> <!-- Upewnij się, że import Region jest poprawny -->
+<?import javafx.scene.layout.VBox?>
+
+<!-- Korzeń to HBox -->
+<HBox spacing="10" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="proj.app.controllers.ChartControlsPanelController"
+      style="-fx-padding: 0 0 0 10;">
+
+    <!-- Lewa Kolumna: Kontrolki -->
+    <VBox fx:id="controlsColumn" spacing="8">
+        <Label fx:id="controlsTitleLabel" text="Chart Controls" style="-fx-font-weight: bold;"/>
+        <!-- HBoxy dla CheckBoxów i wskaźników koloru -->
+        <HBox alignment="CENTER_LEFT" spacing="5">
+            <Region fx:id="swatchAnimalCount" styleClass="chart-legend-swatch, chart-series-animals"/>
+            <CheckBox fx:id="showAnimalCountCheck" text="Animal Count" selected="true"/>
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="5">
+            <Region fx:id="swatchPlantCount" styleClass="chart-legend-swatch, chart-series-plants"/>
+            <CheckBox fx:id="showPlantCountCheck" text="Plant Count" selected="true"/>
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="5">
+            <Region fx:id="swatchAvgEnergy" styleClass="chart-legend-swatch, chart-series-avg_energy"/>
+            <CheckBox fx:id="showAvgEnergyCheck" text="Avg Energy" selected="true"/>
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="5">
+            <Region fx:id="swatchAvgLifespan" styleClass="chart-legend-swatch, chart-series-avg_lifespan"/>
+            <CheckBox fx:id="showAvgLifespanCheck" text="Avg Lifespan"/>
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="5">
+            <Region fx:id="swatchAvgChildren" styleClass="chart-legend-swatch, chart-series-avg_children"/>
+            <CheckBox fx:id="showAvgChildrenCheck" text="Avg Children"/>
+        </HBox>
+        <Separator/>
+        <Label fx:id="optionsLabel" text="Options:"/>
+        <CheckBox fx:id="showMarkersCheck" text="Show Markers"/>
+    </VBox>
+
+    <!-- Prawa Kolumna: Pusta, bo legenda jest teraz przy checkboxach -->
+    <!-- Można tu w przyszłości coś dodać lub usunąć ten VBox, jeśli HBox główny ma tylko 1 dziecko -->
+    <!-- Na razie zostawiam pusty VBox, aby struktura HBox miała 2 kolumny, można usunąć -->
+    <!-- <VBox fx:id="legendColumn" spacing="4"> -->
+    <!--      <padding> <Insets left="10"/> </padding> -->
+    <!-- PUSTO -->
+    <!-- </VBox> -->
+
+</HBox>

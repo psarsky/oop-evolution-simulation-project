@@ -1,24 +1,23 @@
 package proj.model.movement;
 
 /**
- * Enum representing different movement variants in the simulation.
- * Each variant defines a specific movement behavior or strategy for entities in the simulation.
+ * Enumeration defining the available types of animal movement behaviors or variants
+ * used within the simulation. Used to select the appropriate {@link Movement} implementation.
  */
 public enum MovementVariant {
     /**
-     * The "Predestined" movement variant:
-     *
-     * This variant represents a deterministic movement pattern,
-     * where the path or behavior is predefined and does not change.
+     * Represents the default, deterministic movement pattern where the animal's
+     * next move is strictly determined by cycling through its genotype sequence.
+     * Implemented by {@link PredestinedMovement}.
      */
     PREDESTINED,
 
     /**
-     * The "Old Age Ain't No Picnic" movement variant:
-     *
-     * This variant introduces age-dependent movement behavior.
-     * As the entity ages, the probability of skipping a movement on a given day increases,
-     * reaching a maximum skip chance of 80%.
+     * Represents movement behavior affected by the animal's age. Older animals
+     * have an increasing probability of skipping their movement action for the day.
+     * Implemented by {@link OldAgeAintNoPicnic}.
      */
     OLD_AGE_AINT_NO_PICNIC
+
+    // Add other movement variants here if created (e.g., RANDOM_WALK, TARGETED)
 }
